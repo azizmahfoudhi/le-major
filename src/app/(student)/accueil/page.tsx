@@ -1,0 +1,217 @@
+import { Metadata } from 'next';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ProgressBar } from '@/components/ui/progress-bar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, CheckCircle, Clock, Trophy, ArrowRight, BookMarked } from 'lucide-react';
+import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Tableau de bord | Le Major',
+  description: 'Votre tableau de bord étudiant',
+};
+
+// Mock data interfaces
+interface SubjectProgress {
+  id: string;
+  name: string;
+  slug: string;
+  progress: number;
+  totalChapters: number;
+  completedChapters: number;
+  color: string;
+}
+
+interface LastAccessed {
+  type: 'cours' | 'exercice' | 'examen';
+  title: string;
+  subjectName: string;
+  link: string;
+  progress: number;
+  lastReadAt: string;
+}
+
+interface StudentStats {
+  completedChapters: number;
+  completedExercises: number;
+  examAttempts: number;
+}
+
+export default async function DashboardPage() {
+  // TODO: Replace with actual Supabase data fetching
+  // const supabase = await createClient();
+  // const { data: profile } = await supabase.from('profiles').select('*').single();
+  
+  const studentName = "Alexandre";
+  const today = new Date().toLocaleDateString('fr-FR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+
+  const lastAccessed: LastAccessed = {
+    type: 'cours',
+    title: 'Les Fondements de la Microéconomie',
+    subjectName: 'Économie',
+    link: '/matieres/economie/microeconomie/cours/fondements',
+    progress: 45,
+    lastReadAt: 'Hier'
+  };
+
+  const subjects: SubjectProgress[] = [
+    { id: '1', name: 'Mathématiques', slug: 'mathematiques', progress: 30, totalChapters: 12, completedChapters: 3, color: 'bg-blue-500' },
+    { id: '2', name: 'Économie', slug: 'economie', progress: 65, totalChapters: 8, completedChapters: 5, color: 'bg-emerald-500' },
+    { id: '3', name: 'Droit', slug: 'droit', progress: 10, totalChapters: 15, completedChapters: 1, color: 'bg-amber-500' },
+  ];
+
+  const stats: StudentStats = {
+    completedChapters: 9,
+    completedExercises: 24,
+    examAttempts: 3
+  };
+
+  return (
+    <div className="max-w-content mx-auto px-4 md:px-8 py-8 space-y-8 pb-12">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="font-display text-4xl text-navy-900">Bonjour, {studentName} 👋</h1>
+        <p className="text-gray-600 capitalize">{today}</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Main Column */}
+        <div className="md:col-span-2 space-y-8">
+          {/* Continue Learning */}
+          <section>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">Reprendre l&apos;apprentissage</h2>
+            <Card className="overflow-hidden">
+              <div className="p-0">
+                <div className="flex flex-col md:flex-row border-l-4 border-gold-500">
+                  <div className="p-6 flex-1">
+                    <Badge variant="outline" className="mb-2 text-gold-600 border-gold-300">{lastAccessed.subjectName}</Badge>
+                    <h3 className="text-lg font-medium text-navy-900 mb-2">{lastAccessed.title}</h3>
+                    <div className="flex items-center text-sm text-gray-500 mb-4">
+                      <Clock className="w-4 h-4 mr-1" />
+                      Dernier accès : {lastAccessed.lastReadAt}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Progression</span>
+                        <span className="font-medium">{lastAccessed.progress}%</span>
+                      </div>
+                      <ProgressBar value={lastAccessed.progress} className="h-2 bg-gray-100" indicatorClassName="bg-gold-500" />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end border-t md:border-t-0 md:border-l border-gray-100 min-w-[200px]">
+                    <Link href={lastAccessed.link}>
+                      <Button className="w-full md:w-auto">
+                        Continuer <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </section>
+
+          {/* Subjects Grid */}
+          <section>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-navy-900">Vos matières</h2>
+              <Link href="/matieres">
+                <Button variant="ghost" className="text-gold-600 hover:text-gold-700 hover:bg-gold-50">
+                  Voir tout
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {subjects.map(subject => (
+                <Link key={subject.id} href={`/matieres/${subject.slug}`}>
+                  <Card className="hover:shadow-card-hover transition-shadow cursor-pointer h-full">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-medium text-navy-900 line-clamp-1">{subject.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between text-sm text-gray-500 mb-2">
+                        <span>{subject.completedChapters} / {subject.totalChapters} chapitres</span>
+                        <span>{subject.progress}%</span>
+                      </div>
+                      <ProgressBar value={subject.progress} className="h-2" indicatorClassName={subject.color} />
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-8">
+          {/* Stats */}
+          <section>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">Vos statistiques</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-navy-900">{stats.completedChapters}</p>
+                    <p className="text-sm text-gray-500">Chapitres terminés</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-navy-900">{stats.completedExercises}</p>
+                    <p className="text-sm text-gray-500">Exercices réussis</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-navy-900">{stats.examAttempts}</p>
+                    <p className="text-sm text-gray-500">Examens passés</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* Next Steps */}
+          <section>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">Prochaines étapes</h2>
+            <Card>
+              <div className="divide-y divide-gray-100">
+                <div className="p-4 flex gap-3 hover:bg-gray-50 transition-colors">
+                  <div className="mt-1"><BookMarked className="w-5 h-5 text-gray-400" /></div>
+                  <div>
+                    <p className="text-sm font-medium text-navy-900">Réviser la Macroéconomie</p>
+                    <p className="text-xs text-gray-500 mt-1">Examen prévu dans 3 jours</p>
+                  </div>
+                </div>
+                <div className="p-4 flex gap-3 hover:bg-gray-50 transition-colors">
+                  <div className="mt-1"><BookOpen className="w-5 h-5 text-gray-400" /></div>
+                  <div>
+                    <p className="text-sm font-medium text-navy-900">Nouveau chapitre disponible</p>
+                    <p className="text-xs text-gray-500 mt-1">Droit des contrats</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}

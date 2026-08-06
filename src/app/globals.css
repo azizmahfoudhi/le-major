@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-academic-bg text-gray-700 font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 font-semibold tracking-tight;
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-navy-500;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+@layer components {
+  /* Reader prose styles */
+  .prose-reader {
+    @apply text-reader leading-relaxed text-gray-700;
+  }
+
+  .prose-reader h1 {
+    @apply text-reader-h1 font-display font-bold text-navy-900 mt-10 mb-4;
+  }
+
+  .prose-reader h2 {
+    @apply text-reader-h2 font-display font-semibold text-navy-900 mt-8 mb-3 pb-2 border-b border-gray-100;
+  }
+
+  .prose-reader h3 {
+    @apply text-reader-h3 font-semibold text-navy-800 mt-6 mb-2;
+  }
+
+  .prose-reader p {
+    @apply mb-4;
+  }
+
+  .prose-reader ul, .prose-reader ol {
+    @apply mb-4 pl-6;
+  }
+
+  .prose-reader ul {
+    @apply list-disc;
+  }
+
+  .prose-reader ol {
+    @apply list-decimal;
+  }
+
+  .prose-reader li {
+    @apply mb-1;
+  }
+
+  .prose-reader blockquote {
+    @apply border-l-4 border-navy-200 pl-4 italic text-gray-500 my-4;
+  }
+
+  .prose-reader table {
+    @apply w-full border-collapse my-6 text-sm;
+  }
+
+  .prose-reader thead th {
+    @apply bg-navy-50 text-navy-900 font-semibold text-left px-4 py-2.5 border border-gray-200;
+  }
+
+  .prose-reader tbody td {
+    @apply px-4 py-2.5 border border-gray-200;
+  }
+
+  .prose-reader tbody tr:nth-child(even) {
+    @apply bg-gray-50;
+  }
+
+  .prose-reader img {
+    @apply rounded-lg my-6 mx-auto max-w-full;
+  }
+
+  .prose-reader a {
+    @apply text-navy-600 underline underline-offset-2 hover:text-navy-800 transition-colors;
+  }
+
+  .prose-reader code {
+    @apply bg-gray-100 text-navy-800 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .prose-reader pre {
+    @apply bg-navy-950 text-gray-100 rounded-lg p-4 overflow-x-auto my-6 text-sm;
+  }
+
+  .prose-reader pre code {
+    @apply bg-transparent text-inherit p-0 rounded-none;
+  }
+
+  /* KaTeX overrides for academic quality */
+  .prose-reader .katex-display {
+    @apply my-6 overflow-x-auto py-2;
+  }
+
+  .prose-reader .katex {
+    font-size: 1.05em;
+  }
+
+  /* Academic callout base */
+  .academic-callout {
+    @apply my-6 rounded-r-lg border-l-4 p-4 shadow-sm;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .motion-safe {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
