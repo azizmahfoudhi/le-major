@@ -1,8 +1,12 @@
 import { Metadata } from 'next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, List } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
+import { renderMarkdownBody } from '@/lib/markdown/parse';
+import { extractTableOfContents, injectHeadingIds } from '@/lib/utils/markdown';
 
 export const metadata: Metadata = {
   title: 'Cours | Le Major',
@@ -14,16 +18,65 @@ export default async function LessonReaderPage({
 }: {
   params: Promise<{ slug: string; chapter: string; id: string }>;
 }) {
-  const { slug, chapter } = await params;
+  const { slug, chapter, id } = await params;
   
-  // TODO: Fetch real data
-  const chapterName = chapter.charAt(0).toUpperCase() + chapter.slice(1).replace('-', ' ');
+  const supabase = await createClient();
   
-  const toc = [
-    { id: 'intro', title: 'Les Fondements' },
-    { id: 'concept1', title: '1. Concepts de base' },
-    { id: 'dev', title: '2. Développements' },
-  ];
+  // Fetch the current content
+  const { data: content, error: contentError } = await supabase
+    .from('contents')
+    .select(`
+      id,
+      title,
+      body,
+      order_index,
+      type,
+      chapter_id,
+      chapters!inner (
+        id,
+        title,
+        slug,
+        subject_id,
+        subjects!inner (
+          id,
+          name,
+          slug
+        )
+      )
+    `)
+    .eq('id', id)
+    .single();
+    
+  if (contentError || !content) {
+    return notFound();
+  }
+
+  // Type assertion for nested relations due to Supabase query structure
+  const chapterData = content.chapters as any;
+  const subjectData = chapterData?.subjects as any;
+  
+  // Enforce valid URL paths
+  if (chapterData?.slug !== chapter || subjectData?.slug !== slug) {
+    return notFound();
+  }
+
+  const rawBody = content.body || '';
+  const bodyWithIds = injectHeadingIds(rawBody);
+  const renderedContent = await renderMarkdownBody(bodyWithIds);
+  const toc = extractTableOfContents(rawBody);
+
+  // Fetch sibling contents for next/prev navigation
+  const { data: siblingContents } = await supabase
+    .from('contents')
+    .select('id, title, order_index, type')
+    .eq('chapter_id', content.chapter_id)
+    .eq('status', 'published')
+    .order('order_index', { ascending: true });
+
+  const siblings = siblingContents || [];
+  const currentIndex = siblings.findIndex(s => s.id === id);
+  const prevContent = currentIndex > 0 ? siblings[currentIndex - 1] : null;
+  const nextContent = currentIndex !== -1 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
   return (
     <div className="max-w-content mx-auto px-4 md:px-8 py-8 flex flex-col lg:flex-row gap-8 pb-12">
@@ -31,9 +84,9 @@ export default async function LessonReaderPage({
       <div className="flex-1 space-y-6 max-w-4xl">
         {/* Navigation / Breadcrumbs */}
         <div className="flex flex-wrap items-center text-sm text-gray-500 gap-2 mb-4">
-          <Link href={`/matieres/${slug}/${chapter}`} className="hover:text-navy-700 transition-colors flex items-center">
+          <Link href={`/matieres/${slug}/${chapter}`} className="hover:text-navy-700 transition-colors flex items-center font-medium">
             <ChevronLeft className="w-4 h-4 mr-1" />
-            Retour à {chapterName}
+            Retour à {chapterData.title}
           </Link>
         </div>
 
@@ -41,50 +94,41 @@ export default async function LessonReaderPage({
         <Card className="overflow-hidden">
           <CardContent className="p-8 md:p-12">
             <article className="prose-reader">
-              {/* For a real app, this would use the Reader and renderMarkdown components */}
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-blue-900 font-medium">
-                <span className="font-bold text-blue-800">Définition : Coût total</span>
-                <p className="mt-1 text-sm">Le coût total est la somme du coût fixe et du coût variable : CT = CF + CV</p>
-              </div>
+              <h1 className="text-3xl font-display text-navy-900 mb-8">{content.title}</h1>
               
-              <h1 className="text-3xl font-display text-navy-900 mb-6">Les Fondements</h1>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                Dans ce chapitre, nous allons découvrir les bases essentielles. La rigueur analytique 
-                est indispensable pour structurer votre pensée.
-              </p>
-              
-              <h2 className="text-2xl font-display text-navy-900 mt-8 mb-4">1. Concepts de base</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                La compréhension de ces concepts est primordiale pour la suite.
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-700 mb-6">
-                <li>Premier point important : l&apos;analyse marginale</li>
-                <li>Deuxième point à retenir : l&apos;équilibre</li>
-                <li>Troisième concept clé : l&apos;élasticité</li>
-              </ul>
-              
-              <blockquote className="border-l-4 border-gold-400 bg-gray-50 p-4 rounded-r-lg italic text-gray-700 mb-6">
-                &quot;La rigueur est la première qualité requise pour exceller.&quot;
-              </blockquote>
-
-              <h2 className="text-2xl font-display text-navy-900 mt-8 mb-4">2. Développements</h2>
-              <p className="text-gray-700 leading-relaxed mb-4">
-                Nous pouvons aller plus loin en analysant les implications à long terme...
-              </p>
+              {rawBody ? (
+                renderedContent
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <AlertTriangle className="w-12 h-12 mb-4 text-gray-300" />
+                  <p>Ce contenu est vide pour le moment.</p>
+                </div>
+              )}
             </article>
           </CardContent>
         </Card>
 
         {/* Next/Prev Navigation */}
         <div className="flex items-center justify-between pt-4">
-          <Button variant="outline" className="text-gray-600">
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Leçon précédente
-          </Button>
-          <Button>
-            Leçon suivante
-            <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
+          {prevContent ? (
+            <Button variant="outline" className="text-gray-600" asChild>
+              <Link href={`/matieres/${slug}/${chapter}/cours/${prevContent.id}`}>
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                {prevContent.title}
+              </Link>
+            </Button>
+          ) : (
+            <div />
+          )}
+          
+          {nextContent && (
+            <Button asChild>
+              <Link href={`/matieres/${slug}/${chapter}/cours/${nextContent.id}`}>
+                {nextContent.title}
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -95,22 +139,26 @@ export default async function LessonReaderPage({
             <CardContent className="p-5">
               <h3 className="font-medium text-navy-900 flex items-center gap-2 mb-4">
                 <List className="w-4 h-4 text-gold-500" />
-                Sommaire du cours
+                Sommaire
               </h3>
-              <ul className="space-y-3">
-                {toc.map((item, index) => (
-                  <li key={item.id}>
-                    <a 
-                      href={`#${item.id}`} 
-                      className={`text-sm hover:text-gold-600 transition-colors ${
-                        index === 0 ? 'text-gold-600 font-medium' : 'text-gray-600'
-                      }`}
-                    >
-                      {item.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              {toc.length > 0 ? (
+                <ul className="space-y-3">
+                  {toc.map((item, index) => (
+                    <li key={item.id} style={{ marginLeft: item.level === 3 ? '1rem' : '0' }}>
+                      <a 
+                        href={`#${item.id}`} 
+                        className={`text-sm hover:text-gold-600 transition-colors ${
+                          index === 0 && item.level === 2 ? 'text-gold-600 font-medium' : 'text-gray-600'
+                        }`}
+                      >
+                        {item.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-400 italic">Aucun titre détecté.</p>
+              )}
             </CardContent>
           </Card>
         </div>
