@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, Input } from '@/components/ui';
 import { Save, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { createContent } from '../../../actions/content';
+import { createContent, updateContent } from '../../../actions/content';
 
 interface Chapter {
   id: string;
@@ -14,9 +14,17 @@ interface Chapter {
 
 interface ContentFormProps {
   chapters: Chapter[];
+  initialData?: {
+    id: string;
+    title: string;
+    chapter_id: string;
+    type: string;
+    difficulty: string;
+    body: string;
+  };
 }
 
-export default function ContentForm({ chapters }: ContentFormProps) {
+export default function ContentForm({ chapters, initialData }: ContentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,7 +34,12 @@ export default function ContentForm({ chapters }: ContentFormProps) {
     setError('');
     
     const formData = new FormData(e.currentTarget);
-    const result = await createContent(formData);
+    let result;
+    if (initialData) {
+      result = await updateContent(initialData.id, formData);
+    } else {
+      result = await createContent(formData);
+    }
     
     if (result && !result.success) {
       setError(result.error);
@@ -54,6 +67,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
             placeholder="Ex: Les suites arithmétiques" 
             required 
             disabled={isSubmitting}
+            defaultValue={initialData?.title || ''}
           />
         </div>
 
@@ -66,6 +80,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
             name="chapter_id"
             required
             disabled={isSubmitting}
+            defaultValue={initialData?.chapter_id || ''}
             className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
           >
             <option value="">Sélectionner un chapitre</option>
@@ -86,6 +101,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
             name="type"
             required
             disabled={isSubmitting}
+            defaultValue={initialData?.type || 'lesson'}
             className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
           >
             <option value="lesson">Leçon</option>
@@ -103,6 +119,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
             name="difficulty"
             required
             disabled={isSubmitting}
+            defaultValue={initialData?.difficulty || 'easy'}
             className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
           >
             <option value="easy">Facile</option>
@@ -122,6 +139,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
           name="mdx_content"
           required
           disabled={isSubmitting}
+          defaultValue={initialData?.body || ''}
           className="w-full h-96 p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 font-mono text-sm resize-y"
           placeholder="# Titre principal&#10;&#10;Voici une formule : $$f(x) = x^2$$"
         />
@@ -143,7 +161,7 @@ export default function ContentForm({ chapters }: ContentFormProps) {
           ) : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              Publier le contenu
+              {initialData ? 'Enregistrer les modifications' : 'Publier le contenu'}
             </>
           )}
         </Button>

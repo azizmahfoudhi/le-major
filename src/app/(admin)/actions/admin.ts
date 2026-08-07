@@ -94,3 +94,68 @@ export async function getAcademicTree(): Promise<TreeNode[]> {
 
   return tree;
 }
+
+export async function createStructureNode(type: string, parentId: string, name: string) {
+  const supabase = await createClient();
+  let table = '';
+  let parentColumn = '';
+  let nameColumn = 'name';
+
+  switch (type) {
+    case 'Formation': table = 'formations'; parentColumn = 'university_id'; break;
+    case 'Niveau': table = 'levels'; parentColumn = 'formation_id'; break;
+    case 'Édition': table = 'editions'; parentColumn = 'level_id'; break;
+    case 'Semestre': table = 'semesters'; parentColumn = 'edition_id'; break;
+    case 'Matière': table = 'subjects'; parentColumn = 'semester_id'; break;
+    case 'Chapitre': table = 'chapters'; parentColumn = 'subject_id'; nameColumn = 'title'; break;
+    default: throw new Error('Type non supporté');
+  }
+
+  const { error } = await supabase.from(table).insert({
+    [nameColumn]: name,
+    [parentColumn]: parentId,
+    ...(type === 'Matière' ? { slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : {}),
+    ...(type === 'Chapitre' ? { slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-') } : {})
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+export async function updateStructureNode(type: string, id: string, name: string) {
+  const supabase = await createClient();
+  let table = '';
+  let nameColumn = 'name';
+
+  switch (type) {
+    case 'Université': table = 'universities'; break;
+    case 'Formation': table = 'formations'; break;
+    case 'Niveau': table = 'levels'; break;
+    case 'Édition': table = 'editions'; break;
+    case 'Semestre': table = 'semesters'; break;
+    case 'Matière': table = 'subjects'; break;
+    case 'Chapitre': table = 'chapters'; nameColumn = 'title'; break;
+    default: throw new Error('Type non supporté');
+  }
+
+  const { error } = await supabase.from(table).update({ [nameColumn]: name }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteStructureNode(type: string, id: string) {
+  const supabase = await createClient();
+  let table = '';
+
+  switch (type) {
+    case 'Université': table = 'universities'; break;
+    case 'Formation': table = 'formations'; break;
+    case 'Niveau': table = 'levels'; break;
+    case 'Édition': table = 'editions'; break;
+    case 'Semestre': table = 'semesters'; break;
+    case 'Matière': table = 'subjects'; break;
+    case 'Chapitre': table = 'chapters'; break;
+    default: throw new Error('Type non supporté');
+  }
+
+  const { error } = await supabase.from(table).delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
