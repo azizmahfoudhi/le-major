@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { renderMarkdownBody } from '@/lib/markdown/parse';
 import { extractTableOfContents, injectHeadingIds } from '@/lib/utils/markdown';
+import { CompleteButton } from '../../../../../components/complete-button';
 
 export const metadata: Metadata = {
   title: 'Cours | Le Major',
@@ -52,7 +53,9 @@ export default async function LessonReaderPage({
   }
 
   // Type assertion for nested relations due to Supabase query structure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chapterData = content.chapters as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const subjectData = chapterData?.subjects as any;
   
   // Enforce valid URL paths
@@ -111,24 +114,23 @@ export default async function LessonReaderPage({
         {/* Next/Prev Navigation */}
         <div className="flex items-center justify-between pt-4">
           {prevContent ? (
-            <Button variant="outline" className="text-gray-600" asChild>
-              <Link href={`/matieres/${slug}/${chapter}/cours/${prevContent.id}`}>
+            <Link href={`/matieres/${slug}/${chapter}/cours/${prevContent.id}`}>
+              <Button variant="outline" className="text-gray-600">
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 {prevContent.title}
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           ) : (
             <div />
           )}
           
-          {nextContent && (
-            <Button asChild>
-              <Link href={`/matieres/${slug}/${chapter}/cours/${nextContent.id}`}>
-                {nextContent.title}
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          )}
+          <CompleteButton 
+            chapterId={content.chapter_id} 
+            nextContentId={nextContent?.id} 
+            slug={slug} 
+            chapterSlug={chapter}
+            title={nextContent?.title}
+          />
         </div>
       </div>
 
