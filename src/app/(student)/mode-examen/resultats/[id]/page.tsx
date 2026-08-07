@@ -65,7 +65,7 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const questions = (attempt.exams.questions as any[]) || [];
+  const questions = ((attempt.exams as unknown as { questions: any[] })?.questions) || [];
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
@@ -85,7 +85,7 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
           Examen Terminé
         </h1>
         <p className="text-lg text-slate-600 mb-8">
-          Vous avez complété l'épreuve "{attempt.exams.title}".
+          Vous avez complété l'épreuve "{(attempt.exams as unknown as { title: string })?.title}".
         </p>
       </div>
 

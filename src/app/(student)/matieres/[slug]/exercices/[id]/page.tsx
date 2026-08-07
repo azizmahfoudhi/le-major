@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { MDXRemote } from 'next-mdx-remote/rsc';
-import { components } from '@/lib/markdown/components';
+import { mdxComponents } from '@/lib/markdown/components';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -56,8 +56,8 @@ export default async function ExercisePage({
         href={`/matieres/${slug}`}
         className="inline-flex items-center text-sm font-medium text-navy-600 hover:text-navy-900 mb-8 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Retour à {exercise.subjects?.name}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        Retour à {(exercise.subjects as any)?.name}
       </Link>
 
       <div className="mb-8">
@@ -80,7 +80,7 @@ export default async function ExercisePage({
             <h2 className="text-xl font-bold text-navy-900 mb-6 border-b border-gray-100 pb-4">Énoncé</h2>
             <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <MDXRemote source={exercise.statement_body || '*Aucun énoncé*'} components={components} options={mdxOptions as any} />
+              <MDXRemote source={exercise.statement_body || '*Aucun énoncé*'} components={mdxComponents} options={mdxOptions as any} />
             </div>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ export default async function ExercisePage({
             <div className="p-8 border-t border-gray-100 bg-white">
               <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <MDXRemote source={exercise.solution_body} components={components} options={mdxOptions as any} />
+                <MDXRemote source={exercise.solution_body} components={mdxComponents} options={mdxOptions as any} />
               </div>
             </div>
           </details>
