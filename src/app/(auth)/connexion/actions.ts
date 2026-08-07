@@ -26,5 +26,16 @@ export async function login(prevState: { error: string } | undefined, formData: 
     return { error: 'Une erreur est survenue lors de la connexion.' };
   }
 
-  redirect(ROUTES.accueil);
+  // Fetch the user's profile to check their role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
+
+  if (profile?.role === 'admin') {
+    redirect(ROUTES.admin);
+  } else {
+    redirect(ROUTES.accueil);
+  }
 }
