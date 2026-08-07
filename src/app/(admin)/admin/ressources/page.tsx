@@ -1,69 +1,95 @@
-'use client';
-
 import React from 'react';
-import { UploadCloud, Image as ImageIcon, FileText, Link, Trash2, FileCode } from 'lucide-react';
-import { Button, Card } from '@/components/ui';
+import { Plus, Search, Filter, FolderOpen } from 'lucide-react';
+import { Button, Input, Badge } from '@/components/ui';
+import { DataTable } from '@/components/admin/data-table';
+import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
-const mockAssets = [
-  { id: '1', name: 'graph-micro.svg', type: 'svg', size: '12 KB', date: 'Aujourd\'hui', url: '/assets/graph-micro.svg' },
-  { id: '2', name: 'chap1-slides.pdf', type: 'pdf', size: '2.4 MB', date: 'Hier', url: '/assets/chap1-slides.pdf' },
-  { id: '3', name: 'formula-sheet.png', type: 'image', size: '840 KB', date: '12 Oct 2023', url: '/assets/formula.png' },
-  { id: '4', name: 'logo-ihec.png', type: 'image', size: '120 KB', date: '10 Oct 2023', url: '/assets/logo.png' },
-];
+export default async function ResourcesManager() {
+  const supabase = await createClient();
 
-export default function ResourceManager() {
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'svg': return <FileCode className="h-8 w-8 text-orange-500" />;
-      case 'pdf': return <FileText className="h-8 w-8 text-red-500" />;
-      case 'image': return <ImageIcon className="h-8 w-8 text-blue-500" />;
-      default: return <FileText className="h-8 w-8 text-gray-500" />;
-    }
-  };
+  const { data: contents } = await supabase
+    .from('contents')
+    .select(`
+      id,
+      title,
+      status,
+      created_at,
+      chapters (
+        title,
+        subjects (
+          name
+        )
+      )
+    `)
+    .eq('type', 'resource')
+    .order('created_at', { ascending: false });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formattedResources = (contents || []).map((c: any) => ({
+    id: c.id,
+    titre: c.title,
+    matiere: c.chapters?.subjects?.name || 'Inconnue',
+    chapitre: c.chapters?.title || 'Inconnu',
+    statut: c.status === 'published' ? (
+      <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Publié</Badge>
+    ) : c.status === 'archived' ? (
+      <Badge variant="outline" className="text-gray-600 border-gray-200 bg-gray-50">Archivé</Badge>
+    ) : (
+      <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Brouillon</Badge>
+    ),
+    date: new Date(c.created_at).toLocaleDateString('fr-FR')
+  }));
+
+  const columns = [
+    { accessorKey: 'titre', header: 'Titre de la ressource' },
+    { accessorKey: 'matiere', header: 'Matière' },
+    { accessorKey: 'chapitre', header: 'Chapitre' },
+    { accessorKey: 'statut', header: 'Statut' },
+    { accessorKey: 'date', header: 'Date d\'ajout' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-navy-900 font-playfair">Médiathèque</h1>
-        <p className="text-gray-500 mt-1">Gérez vos images, PDFs et autres ressources.</p>
-      </div>
-
-      <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-        <div className="p-3 bg-white rounded-full shadow-sm mb-3">
-          <UploadCloud className="h-6 w-6 text-gold-500" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Ressources Annexes</h1>
+          <p className="text-gray-500 mt-1">Gérez les PDFs, documents et liens externes.</p>
         </div>
-        <p className="text-navy-900 font-medium">Cliquez pour uploader ou glissez-déposez</p>
-        <p className="text-sm text-gray-500 mt-1">SVG, PNG, JPG, PDF (max. 10MB)</p>
+        <Link href="#">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle Ressource
+          </Button>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {mockAssets.map((asset) => (
-          <Card key={asset.id} className="p-4 group">
-            <div className="h-32 bg-gray-50 rounded-lg flex items-center justify-center mb-3 border border-gray-100">
-              {getIcon(asset.type)}
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-navy-900 truncate" title={asset.name}>
-                {asset.name}
-              </p>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>{asset.size}</span>
-                <span>{asset.date}</span>
-              </div>
-            </div>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input 
+            placeholder="Rechercher une ressource..." 
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" className="sm:w-auto">
+          <Filter className="h-4 w-4 mr-2" />
+          Filtres
+        </Button>
+      </div>
 
-            <div className="mt-3 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs">
-                <Link className="h-3 w-3 mr-1.5" />
-                Copier l'URL
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50">
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </Card>
-        ))}
+      <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        {formattedResources.length > 0 ? (
+          <DataTable 
+            columns={columns} 
+            data={formattedResources}
+          />
+        ) : (
+          <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+            <FolderOpen className="w-12 h-12 text-gray-300 mb-4" />
+            <p>Aucune ressource n'a été créée.</p>
+          </div>
+        )}
       </div>
     </div>
   );

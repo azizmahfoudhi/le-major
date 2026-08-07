@@ -1,12 +1,18 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { MDXRemote } from 'next-mdx-remote/rsc';
+import { components } from '@/lib/markdown/components';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 export const metadata: Metadata = {
   title: 'Exercice | Le Major',
-  description: "Détail de l'exercice",
 };
 
 export default async function ExercisePage({
@@ -14,122 +20,92 @@ export default async function ExercisePage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { slug } = await params;
-  
-  const subjectName = slug.charAt(0).toUpperCase() + slug.slice(1).replace('-', ' ');
+  const { slug, id } = await params;
+  const supabase = await createClient();
 
-  // Mock data
-  const exercise = {
-    title: 'Cas pratique n°1 : Application directe',
-    difficulty: 'Moyen',
-    points: 15,
-    statement: `
-### Énoncé
+  const { data: exercise } = await supabase
+    .from('exercises')
+    .select(`
+      id,
+      title,
+      difficulty,
+      statement_body,
+      solution_body,
+      subjects (
+        name,
+        slug
+      )
+    `)
+    .eq('id', id)
+    .single();
 
-Une entreprise produit un bien avec un coût fixe de 10 000 € et un coût variable unitaire de 5 €.
-Le prix de vente sur le marché est fixé à 15 €.
+  if (!exercise) {
+    notFound();
+  }
 
-**Travail à faire :**
-1. Calculez le seuil de rentabilité en volume.
-2. Déterminez le résultat pour une vente de 1 500 unités.
-    `,
-    correction: `
-### Correction détaillée
-
-**1. Calcul du seuil de rentabilité**
-- Marge sur Coût Variable (MCV) unitaire = Prix de vente - Coût Variable unitaire
-- MCV = 15 - 5 = 10 €
-- Seuil de rentabilité (volume) = Coûts Fixes / MCV unitaire
-- SR = 10 000 / 10 = **1 000 unités**
-
-L'entreprise doit vendre 1 000 unités pour atteindre son point mort.
-
-**2. Résultat pour 1 500 unités**
-- Chiffre d'affaires = 1 500 * 15 = 22 500 €
-- Coûts Variables = 1 500 * 5 = 7 500 €
-- Marge sur Coût Variable globale = 22 500 - 7 500 = 15 000 €
-- Résultat = MCV globale - Coûts Fixes = 15 000 - 10 000 = **5 000 €**
-    `
+  const mdxOptions = {
+    mdxOptions: {
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [rehypeKatex],
+    }
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-12 max-w-4xl mx-auto">
-      <div className="flex flex-wrap items-center text-sm text-gray-500 gap-2 mb-2">
-        <Link href={`/matieres/${slug}`} className="hover:text-navy-700 transition-colors flex items-center">
-          <ChevronLeft className="w-4 h-4 mr-1" />
-          Retour à {subjectName}
-        </Link>
-      </div>
+    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
+      <Link 
+        href={`/matieres/${slug}`}
+        className="inline-flex items-center text-sm font-medium text-navy-600 hover:text-navy-900 mb-8 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Retour à {exercise.subjects?.name}
+      </Link>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-start">
-          <h1 className="font-display text-3xl text-navy-900">{exercise.title}</h1>
-          <div className="flex gap-3">
-            <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
-              {exercise.difficulty}
-            </Badge>
-            <span className="text-sm font-medium text-gold-600 px-3 py-1 bg-gold-50 rounded-full">
-              {exercise.points} pts
-            </span>
-          </div>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-xs font-semibold text-gold-600 bg-gold-50 px-3 py-1 rounded-full uppercase tracking-wider">
+            Exercice
+          </span>
+          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
+            {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Intermédiaire' : 'Difficile'}
+          </span>
         </div>
+        <h1 className="text-3xl md:text-4xl font-display font-bold text-navy-900">
+          {exercise.title}
+        </h1>
       </div>
 
-      <Card className="rounded-card border border-gray-100 bg-white shadow-sm">
-        <CardContent className="p-8">
-          <div className="prose prose-slate max-w-none mb-8">
-            <h3 className="text-xl font-display text-navy-900 mb-4 border-b pb-2">Énoncé</h3>
-            <p className="text-gray-700 leading-relaxed">
-              Une entreprise produit un bien avec un coût fixe de 10 000 € et un coût variable unitaire de 5 €.<br/>
-              Le prix de vente sur le marché est fixé à 15 €.
-            </p>
-            <p className="font-medium mt-4">Travail à faire :</p>
-            <ol>
-              <li>Calculez le seuil de rentabilité en volume.</li>
-              <li>Déterminez le résultat pour une vente de 1 500 unités.</li>
-            </ol>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Progressive disclosure using HTML5 details/summary */}
-      <details className="group">
-        <summary className="flex items-center gap-2 cursor-pointer list-none justify-center py-4 bg-navy-900 text-white rounded-lg hover:bg-navy-800 transition-colors font-medium">
-          <CheckCircle className="w-5 h-5" />
-          <span>Voir la correction</span>
-        </summary>
-        
-        <Card className="rounded-card border border-emerald-100 bg-emerald-50/30 shadow-sm mt-6">
+      <div className="space-y-8">
+        <Card className="border-navy-100 shadow-md">
           <CardContent className="p-8">
-            <div className="prose prose-slate max-w-none">
-              <h3 className="text-xl font-display text-emerald-800 mb-4 border-b border-emerald-200 pb-2">Correction détaillée</h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium text-navy-900">1. Calcul du seuil de rentabilité</h4>
-                  <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
-                    <li>Marge sur Coût Variable (MCV) unitaire = Prix de vente - Coût Variable unitaire</li>
-                    <li>MCV = 15 - 5 = 10 €</li>
-                    <li>Seuil de rentabilité (volume) = Coûts Fixes / MCV unitaire</li>
-                    <li>SR = 10 000 / 10 = <span className="font-bold text-emerald-700">1 000 unités</span></li>
-                  </ul>
-                  <p className="text-gray-600 italic mt-2">L'entreprise doit vendre 1 000 unités pour atteindre son point mort.</p>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-navy-900">2. Résultat pour 1 500 unités</h4>
-                  <ul className="list-disc list-inside text-gray-700 mt-2 space-y-1">
-                    <li>Chiffre d'affaires = 1 500 * 15 = 22 500 €</li>
-                    <li>Coûts Variables = 1 500 * 5 = 7 500 €</li>
-                    <li>Marge sur Coût Variable globale = 22 500 - 7 500 = 15 000 €</li>
-                    <li>Résultat = MCV globale - Coûts Fixes = 15 000 - 10 000 = <span className="font-bold text-emerald-700">5 000 €</span></li>
-                  </ul>
-                </div>
-              </div>
+            <h2 className="text-xl font-bold text-navy-900 mb-6 border-b border-gray-100 pb-4">Énoncé</h2>
+            <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <MDXRemote source={exercise.statement_body || '*Aucun énoncé*'} components={components} options={mdxOptions as any} />
             </div>
           </CardContent>
         </Card>
-      </details>
+
+        {exercise.solution_body && (
+          <details className="group bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden open:ring-2 open:ring-emerald-500 open:ring-offset-2 transition-all">
+            <summary className="flex items-center justify-between p-6 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div className="flex items-center">
+                <CheckCircle className="w-6 h-6 text-emerald-500 mr-3" />
+                <span className="text-lg font-bold text-navy-900">Voir la correction détaillée</span>
+              </div>
+              <span className="text-slate-400 group-open:rotate-180 transition-transform duration-300">
+                ▼
+              </span>
+            </summary>
+            
+            <div className="p-8 border-t border-gray-100 bg-white">
+              <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <MDXRemote source={exercise.solution_body} components={components} options={mdxOptions as any} />
+              </div>
+            </div>
+          </details>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { BookOpen, PenTool, FileText, CheckCircle, Circle, ChevronRight, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
@@ -82,12 +81,23 @@ export default async function SubjectDetailPage({
     };
   });
 
-  // Mock data for exercises and exams (to be implemented later or replaced with empty for now)
-  // In a real app we'd fetch from public.exercises where chapter_id in (chapter_ids)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const exercises: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const exams: any[] = [];
+  // Fetch real exercises for this subject
+  const { data: exercisesData } = await supabase
+    .from('exercises')
+    .select('id, title, difficulty')
+    .eq('subject_id', subject.id)
+    .order('title');
+
+  // Fetch real exams for this subject
+  const { data: examsData } = await supabase
+    .from('exams')
+    .select('id, title, duration_minutes, is_mock_exam')
+    .eq('subject_id', subject.id)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
+
+  const exercises = exercisesData || [];
+  const exams = examsData || [];
 
   return (
     <div className="max-w-content mx-auto px-4 md:px-8 py-8 space-y-8 pb-12">
@@ -172,7 +182,23 @@ export default async function SubjectDetailPage({
               <p className="text-gray-500 italic">Aucun exercice disponible pour le moment.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Exercise mapping would go here */}
+                {exercises.map(exercise => (
+                  <Link key={exercise.id} href={`/matieres/${slug}/exercices/${exercise.id}`}>
+                    <Card className="hover:border-gold-300 transition-colors cursor-pointer group h-full">
+                      <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                          <Badge variant="outline" className="mb-2 bg-slate-50">
+                            {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
+                          </Badge>
+                          <h3 className="text-lg font-medium text-navy-900 group-hover:text-gold-600 transition-colors">
+                            {exercise.title}
+                          </h3>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gold-600 transition-colors" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
               </div>
             )}
           </TabsContent>
@@ -183,7 +209,24 @@ export default async function SubjectDetailPage({
               <p className="text-gray-500 italic">Aucun examen disponible pour le moment.</p>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {/* Exam mapping would go here */}
+                {exams.map(exam => (
+                  <Link key={exam.id} href={`/mode-examen/session/${exam.id}`}>
+                    <Card className="hover:border-gold-300 transition-colors cursor-pointer group">
+                      <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                          <Badge variant="outline" className={`mb-2 ${exam.is_mock_exam ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50'}`}>
+                            {exam.is_mock_exam ? 'Examen Blanc' : 'Sujet Réel'}
+                          </Badge>
+                          <h3 className="text-lg font-medium text-navy-900 group-hover:text-gold-600 transition-colors">
+                            {exam.title}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">{exam.duration_minutes} minutes</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gold-600 transition-colors" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
               </div>
             )}
           </TabsContent>
