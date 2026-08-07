@@ -4,33 +4,60 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
 import { Book } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Vos Matières | Le Major',
   description: 'Explorez toutes vos matières disponibles',
 };
 
-interface Subject {
-  id: string;
-  name: string;
-  slug: string;
-  totalChapters: number;
-  progress: number;
-  colorClass: string;
-}
-
 export default async function SubjectsPage() {
-  // TODO: Fetch from Supabase
-  // const supabase = await createClient();
-  // const { data: subjects } = await supabase.from('subjects').select('*');
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const subjects: Subject[] = [
-    { id: '1', name: 'Mathématiques Appliquées', slug: 'mathematiques', totalChapters: 12, progress: 30, colorClass: 'bg-blue-500' },
-    { id: '2', name: 'Microéconomie', slug: 'microeconomie', totalChapters: 8, progress: 65, colorClass: 'bg-emerald-500' },
-    { id: '3', name: 'Macroéconomie', slug: 'macroeconomie', totalChapters: 10, progress: 0, colorClass: 'bg-purple-500' },
-    { id: '4', name: 'Droit Civil', slug: 'droit-civil', totalChapters: 15, progress: 10, colorClass: 'bg-amber-500' },
-    { id: '5', name: 'Histoire de la Pensée Économique', slug: 'histoire-eco', totalChapters: 6, progress: 100, colorClass: 'bg-rose-500' },
-  ];
+  if (!user) {
+    redirect('/connexion');
+  }
+
+  // Fetch all subjects
+  const { data: subjectsData } = await supabase
+    .from('subjects')
+    .select('id, name, slug')
+    .order('name');
+
+  // Fetch all chapters
+  const { data: chaptersData } = await supabase
+    .from('chapters')
+    .select('id, subject_id');
+
+  // Fetch student progress
+  const { data: progressData } = await supabase
+    .from('chapter_progress')
+    .select('chapter_id, is_completed, chapters!inner(subject_id)')
+    .eq('student_id', user.id)
+    .eq('is_completed', true);
+
+  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-indigo-500', 'bg-rose-500'];
+
+  const subjects = (subjectsData || []).map((sub, idx) => {
+    const subjectChapters = chaptersData?.filter(c => c.subject_id === sub.id) || [];
+    const totalChapters = subjectChapters.length;
+    
+    // Using any for the inner join due to supabase typing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const completedChapters = progressData?.filter(p => (p.chapters as any)?.subject_id === sub.id).length || 0;
+    const progressPercent = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
+
+    return {
+      id: sub.id,
+      name: sub.name,
+      slug: sub.slug,
+      totalChapters,
+      progress: progressPercent,
+      colorClass: colors[idx % colors.length]
+    };
+  });
 
   return (
     <div className="max-w-content mx-auto px-4 md:px-8 py-8 space-y-8 pb-12">
@@ -43,7 +70,7 @@ export default async function SubjectsPage() {
         <EmptyState 
           icon={<Book className="w-12 h-12 text-gray-300" />}
           title="Aucune matière disponible"
-          description="Vous n'êtes inscrit à aucune matière pour le moment."
+          description="Les matières seront ajoutées prochainement."
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

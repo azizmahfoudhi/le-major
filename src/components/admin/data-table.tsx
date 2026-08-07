@@ -16,7 +16,7 @@ interface DataTableProps<T> {
   data: T[];
   isLoading?: boolean;
   searchPlaceholder?: string;
-  onSearch?: (value: string) => void;
+  enableSearch?: boolean;
   actions?: (item: T) => React.ReactNode;
   emptyState?: React.ReactNode;
 }
@@ -26,7 +26,7 @@ export function DataTable<T extends { id?: string | number }>({
   data,
   isLoading = false,
   searchPlaceholder = 'Rechercher...',
-  onSearch,
+  enableSearch = false,
   actions,
   emptyState
 }: DataTableProps<T>) {
@@ -35,19 +35,31 @@ export function DataTable<T extends { id?: string | number }>({
   const itemsPerPage = 10;
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setSearch(val);
-    if (onSearch) {
-      onSearch(val);
-    }
+    setSearch(e.target.value);
+    setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Filter data internally if search is present
+  const filteredData = React.useMemo(() => {
+    if (!search) return data;
+    const lowerSearch = search.toLowerCase();
+    return data.filter(item => {
+      // Check all string/number values in the item
+      return Object.values(item as Record<string, unknown>).some(val => {
+        if (typeof val === 'string' || typeof val === 'number') {
+          return String(val).toLowerCase().includes(lowerSearch);
+        }
+        return false;
+      });
+    });
+  }, [data, search]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="w-full space-y-4">
-      {onSearch && (
+      {enableSearch && (
         <div className="flex items-center justify-between">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -122,10 +134,10 @@ export function DataTable<T extends { id?: string | number }>({
           </table>
         </div>
 
-        {!isLoading && data.length > itemsPerPage && (
+        {!isLoading && filteredData.length > itemsPerPage && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white sm:px-6">
             <div className="text-sm text-gray-700">
-              Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, data.length)}</span> sur <span className="font-medium">{data.length}</span> résultats
+              Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> sur <span className="font-medium">{filteredData.length}</span> résultats
             </div>
             <div className="flex items-center space-x-2">
               <Button
