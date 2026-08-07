@@ -1,0 +1,56 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+
+export async function createExercise(data: { 
+  title: string; 
+  difficulty: string; 
+  is_free: boolean; 
+  subject_id: string; 
+  statement_body: string; 
+  solution_body: string; 
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('exercises').insert({
+    title: data.title,
+    difficulty: data.difficulty,
+    is_free: data.is_free,
+    subject_id: data.subject_id,
+    statement_body: data.statement_body,
+    solution_body: data.solution_body,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/exercices');
+}
+
+export async function updateExercise(id: string, data: { 
+  title: string; 
+  difficulty: string; 
+  is_free: boolean; 
+  subject_id: string; 
+  statement_body: string; 
+  solution_body: string; 
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('exercises').update({
+    title: data.title,
+    difficulty: data.difficulty,
+    is_free: data.is_free,
+    subject_id: data.subject_id,
+    statement_body: data.statement_body,
+    solution_body: data.solution_body,
+  }).eq('id', id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/exercices');
+}
+
+export async function deleteExercise(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('exercises').delete().eq('id', id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/exercices');
+}

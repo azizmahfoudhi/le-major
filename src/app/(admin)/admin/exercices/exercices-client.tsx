@@ -1,0 +1,232 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Plus, Brain, Edit, Trash2 } from 'lucide-react';
+import { Button, Input, Badge } from '@/components/ui';
+import { DataTable } from '@/components/admin/data-table';
+import { createExercise, updateExercise, deleteExercise } from './actions';
+
+type Subject = { id: string; name: string; };
+
+type Exercise = {
+  id: string;
+  titre: string;
+  matiere: string;
+  difficulte: React.ReactNode;
+  _raw: Record<string, unknown>;
+};
+
+export default function ExercicesClient({ 
+  initialExercises, 
+  subjects 
+}: { 
+  initialExercises: Exercise[];
+  subjects: Subject[];
+}) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Form State
+  const [title, setTitle] = useState('');
+  const [difficulty, setDifficulty] = useState('easy');
+  const [isFree, setIsFree] = useState(true);
+  const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
+  const [statement, setStatement] = useState('');
+  const [solution, setSolution] = useState('');
+
+  const columns = [
+    { accessorKey: 'titre', header: 'Titre' },
+    { accessorKey: 'matiere', header: 'Matière' },
+    { accessorKey: 'difficulte', header: 'Difficulté' }
+  ];
+
+  const handleOpenNew = () => {
+    setEditingItem(null);
+    setTitle('');
+    setDifficulty('easy');
+    setIsFree(true);
+    setSubjectId(subjects[0]?.id || '');
+    setStatement('');
+    setSolution('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (ex: Exercise) => {
+    setEditingItem(ex._raw);
+    setTitle((ex._raw.title as string) || '');
+    setDifficulty((ex._raw.difficulty as string) || 'easy');
+    setIsFree((ex._raw.is_free as boolean) ?? true);
+    setSubjectId((ex._raw.subject_id as string) || subjects[0]?.id || '');
+    setStatement((ex._raw.statement_body as string) || '');
+    setSolution((ex._raw.solution_body as string) || '');
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet exercice ?')) {
+      await deleteExercise(id);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const payload = {
+        title,
+        difficulty,
+        is_free: isFree,
+        subject_id: subjectId,
+        statement_body: statement,
+        solution_body: solution
+      };
+      
+      if (editingItem) {
+        await updateExercise(editingItem.id as string, payload);
+      } else {
+        await createExercise(payload);
+      }
+      setIsModalOpen(false);
+    } catch {
+      alert('Une erreur est survenue.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Banque d'Exercices</h1>
+          <p className="text-gray-500 mt-1">Gérez tous les exercices de la plateforme.</p>
+        </div>
+        <Button onClick={handleOpenNew}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nouvel Exercice
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        {initialExercises.length > 0 ? (
+          <DataTable 
+            columns={columns} 
+            data={initialExercises}
+            enableSearch={true}
+            searchPlaceholder="Rechercher un exercice..."
+            actions={(item) => (
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(item)}>
+                  <Edit className="w-4 h-4 text-gray-500" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
+                  <Trash2 className="w-4 h-4 text-rose-500" />
+                </Button>
+              </div>
+            )}
+          />
+        ) : (
+          <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+            <Brain className="w-12 h-12 text-gray-300 mb-4" />
+            <p>Aucun exercice disponible.</p>
+          </div>
+        )}
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-navy-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-100 shrink-0">
+              <h2 className="text-xl font-bold text-navy-900">
+                {editingItem ? 'Modifier l\'Exercice' : 'Nouvel Exercice'}
+              </h2>
+            </div>
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                  <Input 
+                    required 
+                    value={title} 
+                    onChange={e => setTitle(e.target.value)} 
+                    placeholder="ex: QCM Fonctions..."
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
+                  <select 
+                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={subjectId}
+                    onChange={e => setSubjectId(e.target.value)}
+                    required
+                  >
+                    <option value="">Sélectionner une matière...</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Difficulté</label>
+                  <select 
+                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={difficulty}
+                    onChange={e => setDifficulty(e.target.value)}
+                  >
+                    <option value="easy">Facile</option>
+                    <option value="intermediate">Intermédiaire</option>
+                    <option value="hard">Difficile</option>
+                  </select>
+                </div>
+                <div className="col-span-2 sm:col-span-1 flex items-end pb-2">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="isFree"
+                      checked={isFree}
+                      onChange={e => setIsFree(e.target.checked)}
+                    />
+                    <label htmlFor="isFree" className="text-sm font-medium text-gray-700">Contenu Gratuit</label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Énoncé (Markdown / LaTeX)</label>
+                <textarea 
+                  className="w-full flex min-h-[120px] rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm font-mono shadow-sm"
+                  value={statement} 
+                  onChange={e => setStatement(e.target.value)} 
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Correction détaillée (Markdown / LaTeX)</label>
+                <textarea 
+                  className="w-full flex min-h-[120px] rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm font-mono shadow-sm"
+                  value={solution} 
+                  onChange={e => setSolution(e.target.value)} 
+                  required
+                />
+              </div>
+              
+              <div className="pt-4 flex justify-end gap-3 shrink-0">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
