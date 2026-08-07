@@ -83,6 +83,20 @@ export default async function DashboardPage() {
 
   const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-indigo-500', 'bg-rose-500'];
 
+  // Fetch exercise progress
+  const { count: completedExercisesCount } = await supabase
+    .from('exercise_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('student_id', user.id)
+    .eq('is_completed', true);
+
+  // Fetch exam attempts
+  const { count: examAttemptsCount } = await supabase
+    .from('exam_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('student_id', user.id)
+    .eq('status', 'completed');
+
   const subjectsProgress = subjectsToDisplay.map((sub, idx) => {
     const subjectChapters = chapters?.filter(c => c.subject_id === sub.id) || [];
     const totalChapters = subjectChapters.length;
@@ -103,8 +117,8 @@ export default async function DashboardPage() {
 
   const stats = {
     completedChapters: progress?.length || 0,
-    completedExercises: 0,
-    examAttempts: 0
+    completedExercises: completedExercisesCount || 0,
+    examAttempts: examAttemptsCount || 0
   };
 
   // Fetch last accessed

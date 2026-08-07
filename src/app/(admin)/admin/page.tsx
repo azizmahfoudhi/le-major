@@ -63,6 +63,14 @@ export default async function AdminDashboard() {
     .order('started_at', { ascending: false })
     .limit(5);
 
+  // Fetch recent students
+  const { data: recentStudents } = await supabase
+    .from('profiles')
+    .select('id, first_name, last_name, email, created_at')
+    .eq('role', 'student')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activities = (recentAttempts || []).map((attempt: any) => ({
     id: attempt.id,
@@ -109,18 +117,28 @@ export default async function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-6">
-          <h2 className="text-lg font-bold text-navy-900 mb-4">Activité des utilisateurs (Aperçu)</h2>
-          <div className="h-64 flex items-end space-x-2">
-            {/* Mock chart since we don't have historical daily data easily aggregatable yet */}
-            {[40, 70, 45, 90, 65, 80, 100].map((height, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center group">
-                <div 
-                  className="w-full bg-navy-100 group-hover:bg-gold-400 transition-colors rounded-t-sm" 
-                  style={{ height: `${height}%` }}
-                />
-                <span className="text-xs text-gray-400 mt-2">Jour {i+1}</span>
-              </div>
-            ))}
+          <h2 className="text-lg font-bold text-navy-900 mb-4">Derniers étudiants inscrits</h2>
+          <div className="space-y-4">
+            {recentStudents && recentStudents.length > 0 ? (
+              recentStudents.map((student) => (
+                <div key={student.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-navy-50 text-navy-600 flex items-center justify-center font-bold">
+                      {student.first_name?.[0]}{student.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-navy-900">{student.first_name} {student.last_name}</p>
+                      <p className="text-xs text-gray-500">{student.email}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {new Date(student.created_at).toLocaleDateString('fr-FR')}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 italic">Aucun étudiant inscrit récemment.</p>
+            )}
           </div>
         </Card>
 
