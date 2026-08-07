@@ -3,13 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import ContentForm from '../../nouveau/content-form';
 import { notFound } from 'next/navigation';
 
-export default async function ModifierContenuPage({ params }: { params: { id: string } }) {
+export default async function ModifierContenuPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const { data: content } = await supabase
     .from('contents')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (!content) {
