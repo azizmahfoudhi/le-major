@@ -38,7 +38,8 @@ export async function register(prevState: { error: string } | undefined, formDat
     if (error.message.includes('User already registered')) {
       return { error: 'Un compte avec cet email existe déjà.' };
     }
-    return { error: 'Une erreur est survenue lors de la création du compte.' };
+    console.error('Signup error:', error);
+    return { error: `Erreur: ${error.message}` };
   }
 
   // After signup, redirect to home/activation

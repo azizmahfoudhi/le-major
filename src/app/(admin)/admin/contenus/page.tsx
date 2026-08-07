@@ -1,87 +1,97 @@
-'use client';
-
 import React from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Edit2, Archive, Trash2 } from 'lucide-react';
-import { Button, Badge } from '@/components/ui';
-import { DataTable, Column } from '@/components/admin/data-table';
+import { Plus, Search, Filter } from 'lucide-react';
+import { Button, Input, Badge } from '@/components/ui';
+import { DataTable } from '@/components/admin/data-table';
+import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
-interface Content {
-  id: string;
-  title: string;
-  type: string;
-  subject: string;
-  status: 'published' | 'draft' | 'archived';
-  date: string;
-}
+export default async function ContenusManager() {
+  const supabase = await createClient();
 
-const mockData: Content[] = [
-  { id: '1', title: 'Chapitre 1: Introduction à la Microéconomie', type: 'Cours', subject: 'Microéconomie', status: 'published', date: '12 Oct 2023' },
-  { id: '2', title: 'Résumé: Les agents économiques', type: 'Résumé', subject: 'Macroéconomie', status: 'published', date: '15 Oct 2023' },
-  { id: '3', title: 'Formulaire de Mathématiques', type: 'Ressource', subject: 'Mathématiques', status: 'draft', date: '20 Oct 2023' },
-  { id: '4', title: 'Chapitre 2: Le comportement du consommateur', type: 'Cours', subject: 'Microéconomie', status: 'archived', date: '01 Nov 2023' },
-];
+  const { data: contents } = await supabase
+    .from('contents')
+    .select(`
+      id,
+      title,
+      type,
+      status,
+      created_at,
+      chapters (
+        title,
+        subjects (
+          name
+        )
+      )
+    `)
+    .order('created_at', { ascending: false });
 
-export default function ContentManager() {
-  const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formattedContents = (contents || []).map((c: any) => ({
+    id: c.id,
+    titre: c.title,
+    matiere: c.chapters?.subjects?.name || 'Inconnue',
+    chapitre: c.chapters?.title || 'Inconnu',
+    type: c.type === 'lesson' ? 'Leçon' : c.type === 'summary' ? 'Résumé' : 'Ressource',
+    statut: c.status === 'published' ? (
+      <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Publié</Badge>
+    ) : c.status === 'archived' ? (
+      <Badge variant="outline" className="text-gray-600 border-gray-200 bg-gray-50">Archivé</Badge>
+    ) : (
+      <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Brouillon</Badge>
+    ),
+    date: new Date(c.created_at).toLocaleDateString('fr-FR')
+  }));
 
-  const columns: Column<Content>[] = [
-    { header: 'Titre', accessorKey: 'title', cell: (item) => <span className="font-medium text-navy-900">{item.title}</span> },
-    { header: 'Type', accessorKey: 'type' },
-    { header: 'Matière', accessorKey: 'subject' },
-    { 
-      header: 'Statut', 
-      accessorKey: 'status',
-      cell: (item) => {
-        const variants: Record<string, "success" | "warning" | "default"> = {
-          published: 'success',
-          draft: 'warning',
-          archived: 'default'
-        };
-        const labels: Record<string, string> = {
-          published: 'Publié',
-          draft: 'Brouillon',
-          archived: 'Archivé'
-        };
-        return <Badge variant={variants[item.status]}>{labels[item.status]}</Badge>;
-      }
-    },
-    { header: 'Date', accessorKey: 'date' },
+  const columns = [
+    { accessorKey: 'titre', header: 'Titre' },
+    { accessorKey: 'matiere', header: 'Matière' },
+    { accessorKey: 'chapitre', header: 'Chapitre' },
+    { accessorKey: 'type', header: 'Type' },
+    { accessorKey: 'statut', header: 'Statut' },
+    { accessorKey: 'date', header: 'Date d\'ajout' },
   ];
-
-  const actions = (item: Content) => (
-    <div className="flex items-center justify-end space-x-2">
-      <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-500 hover:text-navy-900">
-        <Edit2 className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-500 hover:text-orange-600">
-        <Archive className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-500 hover:text-red-600">
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Gestion des Contenus</h1>
-          <p className="text-gray-500 mt-1">Gérez les cours, résumés et ressources de la plateforme.</p>
+          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Contenus de Cours</h1>
+          <p className="text-gray-500 mt-1">Gérez les leçons, résumés et ressources.</p>
         </div>
-        <Button onClick={() => router.push('/admin/contenus/nouveau')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau Contenu
+        <Link href="#">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau Contenu
+          </Button>
+        </Link>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input 
+            placeholder="Rechercher un contenu..." 
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" className="sm:w-auto">
+          <Filter className="h-4 w-4 mr-2" />
+          Filtres
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={mockData}
-        searchPlaceholder="Rechercher un contenu..."
-        actions={actions}
-      />
+      <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        {formattedContents.length > 0 ? (
+          <DataTable 
+            columns={columns} 
+            data={formattedContents}
+          />
+        ) : (
+          <div className="p-12 text-center text-gray-500">
+            Aucun contenu disponible.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

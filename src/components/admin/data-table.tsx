@@ -1,7 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Input, Skeleton, EmptyState } from '@/components/ui';
-import { cn } from '@/lib/utils/cn';
 
 export interface Column<T> {
   header: string;

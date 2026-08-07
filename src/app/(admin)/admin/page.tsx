@@ -1,23 +1,84 @@
-'use client';
-
 import React from 'react';
 import { Users, Key, FileText, Brain, ArrowUpRight, Clock } from 'lucide-react';
-import { Card } from '@/components/ui';
+import { Card } from '@/components/ui/card';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
 
-export default function AdminDashboard() {
+export const metadata: Metadata = {
+  title: 'Admin Dashboard | Le Major',
+};
+
+export default async function AdminDashboard() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/connexion');
+  }
+
+  // Ensure user is admin
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (profile?.role !== 'admin') {
+    redirect('/accueil');
+  }
+
+  // Fetch counts
+  const { count: studentCount } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('role', 'student');
+
+  const { count: activatedCodesCount } = await supabase
+    .from('activation_codes')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'activated');
+
+  const { count: publishedContentsCount } = await supabase
+    .from('contents')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'published');
+
+  const { count: exercisesCount } = await supabase
+    .from('exercises')
+    .select('*', { count: 'exact', head: true });
+
   const stats = [
-    { label: 'Total étudiants', value: '1,240', icon: Users, trend: '+12%', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Codes activés', value: '890', icon: Key, trend: '+5%', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Contenus publiés', value: '456', icon: FileText, trend: '+18%', color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Exercices', value: '1,092', icon: Brain, trend: '+24%', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Total étudiants', value: studentCount || 0, icon: Users, trend: 'Actif', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Codes activés', value: activatedCodesCount || 0, icon: Key, trend: 'Total', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Contenus publiés', value: publishedContentsCount || 0, icon: FileText, trend: 'En ligne', color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Exercices', value: exercisesCount || 0, icon: Brain, trend: 'Base', color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 
-  const activities = [
-    { id: 1, user: 'Ahmed Ben Ali', action: 'a activé le Pack Gold', time: 'Il y a 5 min' },
-    { id: 2, user: 'Sarah Mansour', action: 'a terminé l\'examen Blanc', time: 'Il y a 12 min' },
-    { id: 3, user: 'Admin', action: 'a publié un nouveau résumé "Analyse S2"', time: 'Il y a 1 heure' },
-    { id: 4, user: 'Youssef Trabelsi', action: 's\'est inscrit', time: 'Il y a 2 heures' },
-  ];
+  // Fetch recent exam attempts for activity
+  const { data: recentAttempts } = await supabase
+    .from('exam_attempts')
+    .select(`
+      id,
+      started_at,
+      status,
+      profiles (first_name, last_name),
+      exams (title)
+    `)
+    .order('started_at', { ascending: false })
+    .limit(5);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activities = (recentAttempts || []).map((attempt: any) => ({
+    id: attempt.id,
+    user: `${attempt.profiles?.first_name || 'Étudiant'} ${attempt.profiles?.last_name || ''}`,
+    action: attempt.status === 'completed' ? `a terminé l'examen ${attempt.exams?.title}` : `a commencé l'examen ${attempt.exams?.title}`,
+    time: new Date(attempt.started_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }),
+  }));
+
+  if (activities.length === 0) {
+    activities.push({
+      id: 'mock',
+      user: 'Système',
+      action: 'Aucune activité récente',
+      time: '-',
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -48,9 +109,9 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-6">
-          <h2 className="text-lg font-bold text-navy-900 mb-4">Activité des utilisateurs (7 derniers jours)</h2>
+          <h2 className="text-lg font-bold text-navy-900 mb-4">Activité des utilisateurs (Aperçu)</h2>
           <div className="h-64 flex items-end space-x-2">
-            {/* Simple CSS Bar Chart */}
+            {/* Mock chart since we don't have historical daily data easily aggregatable yet */}
             {[40, 70, 45, 90, 65, 80, 100].map((height, i) => (
               <div key={i} className="flex-1 flex flex-col items-center group">
                 <div 
@@ -66,7 +127,8 @@ export default function AdminDashboard() {
         <Card className="p-6">
           <h2 className="text-lg font-bold text-navy-900 mb-4">Activité récente</h2>
           <div className="space-y-4">
-            {activities.map((activity) => (
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {activities.map((activity: any) => (
               <div key={activity.id} className="flex space-x-3">
                 <div className="mt-0.5">
                   <Clock className="h-4 w-4 text-gray-400" />
