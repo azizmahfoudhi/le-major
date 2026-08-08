@@ -12,6 +12,12 @@ export default async function ExercicesManager() {
     .select('id, name')
     .order('name');
 
+  // Fetch exams for the source dropdown
+  const { data: examsData } = await supabase
+    .from('exams')
+    .select('id, title')
+    .order('title');
+
   const { data: exercises } = await supabase
     .from('exercises')
     .select(`
@@ -22,7 +28,12 @@ export default async function ExercicesManager() {
       subject_id,
       statement_body,
       solution_body,
-      subjects ( name )
+      exam_id,
+      theme,
+      points,
+      duration_minutes,
+      subjects ( name ),
+      exams ( title )
     `)
     .order('created_at', { ascending: false });
 
@@ -47,6 +58,7 @@ export default async function ExercicesManager() {
     <ExercicesClient 
       initialExercises={formattedExercises} 
       subjects={subjectsData || []} 
+      exams={examsData || []}
     />
   );
 }

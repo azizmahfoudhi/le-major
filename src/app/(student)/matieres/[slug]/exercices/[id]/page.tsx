@@ -2,8 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { mdxComponents } from '@/lib/markdown/components';
@@ -34,6 +33,9 @@ export default async function ExercisePage({
       subjects (
         name,
         slug
+      ),
+      exams (
+        title
       )
     `)
     .eq('id', id)
@@ -56,8 +58,8 @@ export default async function ExercisePage({
         href={`/matieres/${slug}`}
         className="inline-flex items-center text-sm font-medium text-navy-600 hover:text-navy-900 mb-8 transition-colors"
       >
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        Retour à {(exercise.subjects as any)?.name}
+        {/* @ts-expect-error Types Supabase */}
+        Retour à {exercise.subjects?.name}
       </Link>
 
       <div className="mb-8">
@@ -68,6 +70,13 @@ export default async function ExercisePage({
           <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
             {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Intermédiaire' : 'Difficile'}
           </span>
+          {/* @ts-expect-error Types Supabase */}
+          {exercise.exams?.title && (
+            <span className="text-xs font-semibold text-navy-600 bg-navy-50 px-3 py-1 rounded-full uppercase tracking-wider border border-navy-100">
+              {/* @ts-expect-error Types Supabase */}
+              Source: {exercise.exams.title}
+            </span>
+          )}
         </div>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-navy-900">
           {exercise.title}

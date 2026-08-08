@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import ScoreForm from './score-form';
 
 export const metadata: Metadata = {
   title: 'Résultats Examen | Le Major',
@@ -51,21 +51,53 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
       id,
       status,
       score,
+      exam_id,
       exams (
-        id,
-        title,
-        questions
+        title
       )
     `)
     .eq('id', attemptId)
+    .eq('student_id', user.id)
     .single();
 
-  if (!attempt || !attempt.exams) {
+  if (!attempt) {
     redirect('/mode-examen');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const questions = ((attempt.exams as unknown as { questions: any[] })?.questions) || [];
+  // @ts-expect-error Types Supabase
+  const title = attempt.exams ? (attempt.exams as {title: string}).title : 'Examen Le Major (Personnalisé)';
+
+  // Fetch the exercises
+  const { data: attemptExercises } = await supabase
+    .from('exam_attempt_exercises')
+    .select(`
+      order_index,
+      student_score,
+      exercises (
+        id,
+        theme,
+        points,
+        statement_body,
+        solution_body
+      )
+    `)
+    .eq('attempt_id', attemptId)
+    .order('order_index', { ascending: true });
+
+  const questions = attemptExercises?.map((ae, index) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ex: any = ae.exercises;
+    return {
+      id: ex.id,
+      number: index + 1,
+      theme: ex.theme || 'Exercice',
+      points: ex.points || 5,
+      statement: ex.statement_body || '',
+      solution: ex.solution_body || ''
+    };
+  }) || [];
+
+  const maxTotalScore = questions.reduce((acc, q) => acc + (parseFloat(q.points as string) || 0), 0);
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
@@ -85,7 +117,7 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
           Examen Terminé
         </h1>
         <p className="text-lg text-slate-600 mb-8">
-          Vous avez complété l'épreuve "{(attempt.exams as unknown as { title: string })?.title}".
+          Vous avez complété l'épreuve "{title}".
         </p>
       </div>
 
@@ -123,41 +155,26 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Correction Officielle
                   </h4>
-                  <div className="prose prose-slate max-w-none text-slate-800">
-                    {/* For now, just show a placeholder correction or render from q.solution if we add it to JSON */}
-                    <p className="italic text-slate-500">
-                      La correction détaillée pour cette question sera affichée ici. Vous pouvez comparer votre brouillon avec cette réponse attendue.
-                    </p>
-                  </div>
+                  <div 
+                    className="prose prose-slate max-w-none text-slate-800"
+                    dangerouslySetInnerHTML={{ __html: renderMath(q.solution || "Pas de correction fournie.") }}
+                  />
                 </div>
               </div>
             </div>
           ))
         )}
 
-        <div className="bg-amber-50 rounded-xl p-8 border border-amber-100 text-center">
-          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-navy-900 mb-2">Auto-Évaluation</h3>
-          <p className="text-slate-600 mb-6 max-w-lg mx-auto">
-            Comparez votre brouillon avec la correction officielle ci-dessus, puis estimez votre note pour cet examen.
-          </p>
-          <div className="flex items-center justify-center gap-4 max-w-sm mx-auto">
-            <input 
-              type="number" 
-              min="0" 
-              max="20"
-              placeholder="/ 20"
-              disabled
-              className="w-24 text-center text-2xl font-bold h-14 rounded-lg border border-gray-300 bg-gray-100 cursor-not-allowed"
-            />
-            <Button size="lg" disabled className="bg-navy-900 opacity-50 cursor-not-allowed">
-              Enregistrer ma note
-            </Button>
+        {attempt.status !== 'evaluated' ? (
+          <ScoreForm attemptId={attempt.id} maxScore={maxTotalScore || 20} />
+        ) : (
+          <div className="bg-navy-50 rounded-xl p-8 border border-navy-100 text-center">
+            <h3 className="text-xl font-bold text-navy-900 mb-2">Note Enregistrée</h3>
+            <p className="text-slate-600 mb-4">
+              Votre score de {attempt.score} / {maxTotalScore || 20} a été pris en compte.
+            </p>
           </div>
-          <p className="text-xs text-amber-600 mt-4">
-            *L'enregistrement des notes sera bientôt disponible.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

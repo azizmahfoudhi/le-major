@@ -188,6 +188,30 @@ export default function ExamensClient({ initialExams, subjects }: { initialExams
                     S'agit-il d'un Examen Blanc ?
                   </label>
                 </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="statement" className="text-sm font-medium text-navy-900">Énoncé Global (Optionnel, Markdown)</label>
+                  <textarea 
+                    id="statement" 
+                    name="statement" 
+                    rows={4}
+                    defaultValue={editingExam?._raw.statement || ''}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
+                    placeholder="Énoncé général de l'examen s'il ne peut pas être découpé uniquement en exercices."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="correction" className="text-sm font-medium text-navy-900">Correction Globale (Optionnelle, Markdown)</label>
+                  <textarea 
+                    id="correction" 
+                    name="correction" 
+                    rows={4}
+                    defaultValue={editingExam?._raw.correction || ''}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
+                    placeholder="Correction générale de l'examen."
+                  />
+                </div>
               </form>
             </div>
 

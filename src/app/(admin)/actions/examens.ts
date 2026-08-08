@@ -11,6 +11,8 @@ export async function createExam(formData: FormData) {
   const duration_minutes = parseInt(formData.get('duration_minutes') as string, 10);
   const status = formData.get('status') as string;
   const is_mock_exam = formData.get('is_mock_exam') === 'on';
+  const statement = formData.get('statement') as string || null;
+  const correction = formData.get('correction') as string || null;
 
   if (!title || !subject_id || isNaN(duration_minutes)) {
     return { success: false, error: 'Champs invalides' };
@@ -22,6 +24,8 @@ export async function createExam(formData: FormData) {
     duration_minutes,
     status,
     is_mock_exam,
+    statement,
+    correction,
   });
 
   if (error) {
@@ -40,6 +44,8 @@ export async function updateExam(id: string, formData: FormData) {
   const duration_minutes = parseInt(formData.get('duration_minutes') as string, 10);
   const status = formData.get('status') as string;
   const is_mock_exam = formData.get('is_mock_exam') === 'on';
+  const statement = formData.get('statement') as string || null;
+  const correction = formData.get('correction') as string || null;
 
   if (!title || !subject_id || isNaN(duration_minutes)) {
     return { success: false, error: 'Champs invalides' };
@@ -51,6 +57,8 @@ export async function updateExam(id: string, formData: FormData) {
     duration_minutes,
     status,
     is_mock_exam,
+    statement,
+    correction,
   }).eq('id', id);
 
   if (error) {

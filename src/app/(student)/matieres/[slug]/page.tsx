@@ -84,7 +84,7 @@ export default async function SubjectDetailPage({
   // Fetch real exercises for this subject
   const { data: exercisesData } = await supabase
     .from('exercises')
-    .select('id, title, difficulty')
+    .select('id, title, difficulty, exams(title)')
     .eq('subject_id', subject.id)
     .order('title');
 
@@ -193,6 +193,14 @@ export default async function SubjectDetailPage({
                           <h3 className="text-lg font-medium text-navy-900 group-hover:text-gold-600 transition-colors">
                             {exercise.title}
                           </h3>
+                          {/* @ts-expect-error Types Supabase */}
+                          {exercise.exams?.title && (
+                            <p className="text-xs text-slate-500 mt-1 flex items-center">
+                              <BookOpen className="w-3 h-3 mr-1" />
+                              {/* @ts-expect-error Types Supabase */}
+                              Source : {exercise.exams.title}
+                            </p>
+                          )}
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gold-600 transition-colors" />
                       </CardContent>

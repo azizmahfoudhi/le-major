@@ -20,7 +20,6 @@ interface Question {
 }
 
 interface ExamProps {
-  examId: string;
   attemptId: string;
   title: string;
   durationMinutes: number;
@@ -52,7 +51,7 @@ function renderMath(text: string) {
   return html;
 }
 
-export default function ExamClient({ examId, attemptId, title, durationMinutes, questions }: ExamProps) {
+export default function ExamClient({ attemptId, title, durationMinutes, questions }: ExamProps) {
   const router = useRouter();
   const examDurationSeconds = durationMinutes * 60;
   

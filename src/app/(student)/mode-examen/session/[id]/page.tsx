@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ExamSessionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: examId } = await params;
+  const { id: attemptId } = await params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,58 +17,62 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
     redirect('/connexion');
   }
 
-  // 1. Fetch the exam details
-  const { data: exam, error: examError } = await supabase
-    .from('exams')
-    .select('id, title, duration_minutes, questions')
-    .eq('id', examId)
+  // 1. Fetch the attempt details
+  const { data: attempt, error: attemptError } = await supabase
+    .from('exam_attempts')
+    .select('id, status, exam_id, exams(title, duration_minutes)')
+    .eq('id', attemptId)
+    .eq('student_id', user.id)
     .single();
 
-  if (examError || !exam) {
+  if (attemptError || !attempt) {
     redirect('/mode-examen');
   }
 
-  // 2. Check for an existing in_progress attempt
-  let { data: attempt } = await supabase
-    .from('exam_attempts')
-    .select('id, status')
-    .eq('exam_id', examId)
-    .eq('student_id', user.id)
-    .eq('status', 'in_progress')
-    .order('started_at', { ascending: false })
-    .limit(1)
-    .single();
+  // @ts-expect-error Types Supabase
+  const title = attempt.exams ? (attempt.exams as {title: string}).title : 'Examen Le Major (Personnalisé)';
+  // @ts-expect-error Types Supabase
+  const durationMinutes = attempt.exams ? (attempt.exams as {duration_minutes: number}).duration_minutes : 120; // fallback if custom
 
-  // 3. If no in_progress attempt, create a new one
-  if (!attempt) {
-    const { data: newAttempt, error: insertError } = await supabase
-      .from('exam_attempts')
-      .insert({
-        exam_id: examId,
-        student_id: user.id,
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-      })
-      .select('id, status')
-      .single();
+  // 2. Fetch the exercises linked to this attempt
+  const { data: attemptExercises, error: exercisesError } = await supabase
+    .from('exam_attempt_exercises')
+    .select(`
+      order_index,
+      exercises (
+        id,
+        theme,
+        points,
+        statement_body
+      )
+    `)
+    .eq('attempt_id', attemptId)
+    .order('order_index', { ascending: true });
 
-    if (insertError) {
-      console.error('Error creating exam attempt:', insertError);
-      redirect('/mode-examen');
-    }
-    attempt = newAttempt;
+  if (exercisesError || !attemptExercises || attemptExercises.length === 0) {
+    // If no exercises linked, maybe fallback to exam questions if it's an old format (pre-migration)
+    // but we assume migration is done and all data is proper.
+    console.error("Aucun exercice trouvé pour cette session.");
   }
 
-  // Handle JSONB questions safely
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const questions = (exam.questions as any[]) || [];
+  // 3. Format questions for the client
+  const questions = attemptExercises?.map((ae, index) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ex: any = ae.exercises;
+    return {
+      id: ex.id,
+      number: index + 1,
+      theme: ex.theme || 'Exercice',
+      points: ex.points || 5,
+      statement: ex.statement_body || ''
+    };
+  }) || [];
 
   return (
     <ExamClient 
-      examId={exam.id}
       attemptId={attempt.id}
-      title={exam.title}
-      durationMinutes={exam.duration_minutes}
+      title={title}
+      durationMinutes={durationMinutes}
       questions={questions}
     />
   );

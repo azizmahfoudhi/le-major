@@ -10,6 +10,10 @@ export async function createExercise(data: {
   subject_id: string; 
   statement_body: string; 
   solution_body: string; 
+  exam_id?: string | null;
+  theme?: string | null;
+  points?: number | null;
+  duration_minutes?: number | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from('exercises').insert({
@@ -19,6 +23,10 @@ export async function createExercise(data: {
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,
+    exam_id: data.exam_id || null,
+    theme: data.theme || null,
+    points: data.points || null,
+    duration_minutes: data.duration_minutes || null,
   });
 
   if (error) throw new Error(error.message);
@@ -32,6 +40,10 @@ export async function updateExercise(id: string, data: {
   subject_id: string; 
   statement_body: string; 
   solution_body: string; 
+  exam_id?: string | null;
+  theme?: string | null;
+  points?: number | null;
+  duration_minutes?: number | null;
 }) {
   const supabase = await createClient();
   const { error } = await supabase.from('exercises').update({
@@ -41,6 +53,10 @@ export async function updateExercise(id: string, data: {
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,
+    exam_id: data.exam_id || null,
+    theme: data.theme || null,
+    points: data.points || null,
+    duration_minutes: data.duration_minutes || null,
   }).eq('id', id);
 
   if (error) throw new Error(error.message);

@@ -7,6 +7,7 @@ import { DataTable } from '@/components/admin/data-table';
 import { createExercise, updateExercise, deleteExercise } from './actions';
 
 type Subject = { id: string; name: string; };
+type Exam = { id: string; title: string; };
 
 type Exercise = {
   id: string;
@@ -18,10 +19,12 @@ type Exercise = {
 
 export default function ExercicesClient({ 
   initialExercises, 
-  subjects 
+  subjects,
+  exams 
 }: { 
   initialExercises: Exercise[];
   subjects: Subject[];
+  exams: Exam[];
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
@@ -34,6 +37,12 @@ export default function ExercicesClient({
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
+  
+  // Nouvelles méta-données
+  const [examId, setExamId] = useState('');
+  const [theme, setTheme] = useState('');
+  const [points, setPoints] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState('');
 
   const columns = [
     { accessorKey: 'titre', header: 'Titre' },
@@ -49,6 +58,10 @@ export default function ExercicesClient({
     setSubjectId(subjects[0]?.id || '');
     setStatement('');
     setSolution('');
+    setExamId('');
+    setTheme('');
+    setPoints('');
+    setDurationMinutes('');
     setIsModalOpen(true);
   };
 
@@ -60,6 +73,10 @@ export default function ExercicesClient({
     setSubjectId((ex._raw.subject_id as string) || subjects[0]?.id || '');
     setStatement((ex._raw.statement_body as string) || '');
     setSolution((ex._raw.solution_body as string) || '');
+    setExamId((ex._raw.exam_id as string) || '');
+    setTheme((ex._raw.theme as string) || '');
+    setPoints(ex._raw.points ? String(ex._raw.points) : '');
+    setDurationMinutes(ex._raw.duration_minutes ? String(ex._raw.duration_minutes) : '');
     setIsModalOpen(true);
   };
 
@@ -79,7 +96,11 @@ export default function ExercicesClient({
         is_free: isFree,
         subject_id: subjectId,
         statement_body: statement,
-        solution_body: solution
+        solution_body: solution,
+        exam_id: examId || undefined,
+        theme: theme || undefined,
+        points: points ? parseFloat(points) : undefined,
+        duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined
       };
       
       if (editingItem) {
@@ -171,6 +192,65 @@ export default function ExercicesClient({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Examen Source (Optionnel)</label>
+                  <select 
+                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={examId}
+                    onChange={e => setExamId(e.target.value)}
+                  >
+                    <option value="">Aucun examen source...</option>
+                    {exams.map(e => (
+                      <option key={e.id} value={e.id}>{e.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thème (Chapitre secondaire)</label>
+                  <Input 
+                    value={theme} 
+                    onChange={e => setTheme(e.target.value)} 
+                    placeholder="ex: Monopole, Théorie des coûts..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-3 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Points</label>
+                  <Input 
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    value={points} 
+                    onChange={e => setPoints(e.target.value)} 
+                    placeholder="ex: 5"
+                  />
+                </div>
+                <div className="col-span-3 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Durée Estimée (min)</label>
+                  <Input 
+                    type="number"
+                    min="1"
+                    value={durationMinutes} 
+                    onChange={e => setDurationMinutes(e.target.value)} 
+                    placeholder="ex: 30"
+                  />
+                </div>
+                <div className="col-span-3 sm:col-span-1 flex items-end pb-2">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="isFree"
+                      checked={isFree}
+                      onChange={e => setIsFree(e.target.checked)}
+                    />
+                    <label htmlFor="isFree" className="text-sm font-medium text-gray-700">Contenu Gratuit</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Difficulté</label>
                   <select 
                     className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
@@ -181,17 +261,6 @@ export default function ExercicesClient({
                     <option value="intermediate">Intermédiaire</option>
                     <option value="hard">Difficile</option>
                   </select>
-                </div>
-                <div className="col-span-2 sm:col-span-1 flex items-end pb-2">
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="isFree"
-                      checked={isFree}
-                      onChange={e => setIsFree(e.target.checked)}
-                    />
-                    <label htmlFor="isFree" className="text-sm font-medium text-gray-700">Contenu Gratuit</label>
-                  </div>
                 </div>
               </div>
 
