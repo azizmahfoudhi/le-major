@@ -31,7 +31,7 @@ export async function generateCodes(packageId: string, quantity: number) {
     codesToInsert.push({
       code: generateRandomCode(),
       package_id: packageId,
-      is_active: false,
+      created_by: user.id,
     });
   }
 

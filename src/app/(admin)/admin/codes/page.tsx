@@ -14,7 +14,7 @@ export default async function CodesManager() {
     .select(`
       id,
       code,
-      is_active,
+      status,
       created_at,
       packages (
         name
@@ -33,7 +33,7 @@ export default async function CodesManager() {
     id: c.id,
     code: <span className="font-mono font-bold tracking-wider">{c.code}</span>,
     pack: c.packages?.name || 'Inconnu',
-    statut: c.is_active ? (
+    statut: c.status === 'activated' ? (
       <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Activé</Badge>
     ) : (
       <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Disponible</Badge>
