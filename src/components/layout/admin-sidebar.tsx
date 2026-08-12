@@ -20,6 +20,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { useState } from 'react';
+import Image from 'next/image';
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -50,13 +51,28 @@ export default function AdminSidebar() {
       >
         <div className="h-16 flex items-center justify-between px-4 border-b border-navy-800">
           {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-gold-500 font-display text-xl font-bold leading-none">LE MAJOR</span>
-              <span className="text-xs font-medium text-navy-400 tracking-wider">ADMIN</span>
-            </div>
+            <Link href="/admin" className="flex flex-col">
+              <Image
+                src="/logo_horizontal_navy.png"
+                alt="Le Major"
+                width={120}
+                height={32}
+                className="h-8 w-auto object-contain"
+                priority
+              />
+              <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
+            </Link>
           )}
           {isCollapsed && (
-            <span className="text-gold-500 font-display text-xl font-bold mx-auto">LM</span>
+            <Link href="/admin" className="mx-auto">
+              <Image
+                src="/app_icon.png"
+                alt="LM"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain rounded"
+              />
+            </Link>
           )}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -101,10 +117,16 @@ export default function AdminSidebar() {
 
       {/* Mobile top bar for admin */}
       <div className="md:hidden flex items-center justify-between h-16 bg-navy-950 px-4 border-b border-navy-800">
-        <div className="flex flex-col">
-          <span className="text-gold-500 font-display text-xl font-bold leading-none">LE MAJOR</span>
-          <span className="text-xs font-medium text-navy-400 tracking-wider">ADMIN</span>
-        </div>
+        <Link href="/admin" className="flex flex-col">
+          <Image
+            src="/logo_horizontal_navy.png"
+            alt="Le Major"
+            width={110}
+            height={30}
+            className="h-7 w-auto object-contain"
+          />
+          <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
+        </Link>
         {/* We would typically put a mobile drawer here for admin, but for now we'll just have the top bar */}
       </div>
     </>

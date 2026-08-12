@@ -18,6 +18,16 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'Le Major',
   description: 'Le Major, votre plateforme académique d\'excellence.',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/app_icon.png',
+    shortcut: '/favicon.png',
+  },
+  openGraph: {
+    title: 'Le Major',
+    description: 'Le Major, votre plateforme académique d\'excellence.',
+    images: ['/logo_horizontal_navy.png'],
+  },
 };
 
 export default function RootLayout({

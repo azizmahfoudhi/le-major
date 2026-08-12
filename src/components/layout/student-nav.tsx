@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils/cn';
 import { Menu, User } from 'lucide-react';
 import { useState } from 'react';
 import MobileNav from './mobile-nav';
+import Image from 'next/image';
 
 export default function StudentNav() {
   const pathname = usePathname();
@@ -16,8 +17,15 @@ export default function StudentNav() {
     <>
       <nav className="fixed top-0 left-0 right-0 h-16 bg-navy-900 z-40 px-4 md:px-8 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link href="/accueil" className="text-gold-500 font-display text-2xl font-bold tracking-wide">
-            LE MAJOR
+          <Link href="/accueil" className="flex items-center">
+            <Image
+              src="/logo_horizontal_navy.png"
+              alt="Le Major"
+              width={140}
+              height={40}
+              className="h-9 w-auto object-contain"
+              priority
+            />
           </Link>
           <div className="hidden md:flex items-center gap-6">
             {STUDENT_NAV.map((item) => {

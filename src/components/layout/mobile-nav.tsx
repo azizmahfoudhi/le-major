@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import Link from 'next/link';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
+import Image from 'next/image';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -25,7 +26,15 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
       {/* Drawer */}
       <div className="relative w-64 max-w-xs flex flex-col bg-navy-900 border-r border-navy-800 shadow-xl h-full animate-slide-right">
         <div className="flex items-center justify-between h-16 px-4 border-b border-navy-800">
-          <span className="text-gold-500 font-display text-xl font-bold">LE MAJOR</span>
+          <Link href="/accueil" onClick={onClose}>
+            <Image
+              src="/logo_horizontal_navy.png"
+              alt="Le Major"
+              width={120}
+              height={36}
+              className="h-8 w-auto object-contain"
+            />
+          </Link>
           <button 
             onClick={onClose}
             className="text-navy-200 hover:text-white"
