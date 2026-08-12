@@ -24,12 +24,18 @@ export async function register(prevState: { error: string } | undefined, formDat
 
   const supabase = await createClient();
 
+  // Split fullName into first_name and last_name for the database trigger
+  const nameParts = fullName.trim().split(' ');
+  const firstName = nameParts[0];
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
       },
     },
   });
