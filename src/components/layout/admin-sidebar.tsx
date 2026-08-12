@@ -17,10 +17,12 @@ import {
   Users,
   BarChart3,
   Settings,
-  ChevronLeft
+  ChevronLeft,
+  LogOut
 } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image';
+import { signOut } from '@/app/(auth)/signout/actions';
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -113,6 +115,23 @@ export default function AdminSidebar() {
             ))}
           </div>
         </div>
+
+        {/* Footer: Sign out */}
+        <div className="border-t border-navy-800 p-3">
+          <form action={signOut}>
+            <button
+              type="submit"
+              title={isCollapsed ? 'Se déconnecter' : undefined}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "text-navy-400 hover:text-rose-400 hover:bg-rose-500/10"
+              )}
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              {!isCollapsed && <span>Se déconnecter</span>}
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Mobile top bar for admin */}
@@ -127,7 +146,15 @@ export default function AdminSidebar() {
           />
           <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
         </Link>
-        {/* We would typically put a mobile drawer here for admin, but for now we'll just have the top bar */}
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-navy-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Déconnexion</span>
+          </button>
+        </form>
       </div>
     </>
   );
