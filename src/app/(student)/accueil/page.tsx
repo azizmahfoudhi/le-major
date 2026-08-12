@@ -22,7 +22,9 @@ export default async function DashboardPage() {
   }
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-  const studentName = profile?.first_name || "Étudiant";
+  const studentName = profile?.first_name 
+    ? `${profile.first_name} ${profile.last_name || ''}`.trim() 
+    : "Étudiant";
   
   const today = new Date().toLocaleDateString('fr-FR', { 
     weekday: 'long', 
