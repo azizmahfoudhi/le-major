@@ -18,10 +18,11 @@ export async function activateCode(
   const cleanCode = code.replace(/\s/g, '').toUpperCase();
 
   const { data, error } = await supabase.rpc('redeem_activation_code', {
-    code_to_redeem: cleanCode,
+    p_code: cleanCode,
   });
 
   if (error) {
+    console.error('RPC Error:', error);
     return { error: 'Code invalide, déjà utilisé ou expiré.' };
   }
 
