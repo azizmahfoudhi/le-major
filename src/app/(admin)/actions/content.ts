@@ -9,21 +9,29 @@ export async function createContent(formData: FormData) {
 
   const title = formData.get('title') as string;
   const chapter_id = formData.get('chapter_id') as string;
-  const type = formData.get('type') as string;
-  const difficulty = formData.get('difficulty') as string;
   const mdx_content = formData.get('mdx_content') as string;
 
   if (!title || !chapter_id || !mdx_content) {
     return { success: false, error: 'Veuillez remplir tous les champs obligatoires.' };
   }
 
+  // Auto-increment order_index within the chapter
+  const { data: existing } = await supabase
+    .from('contents')
+    .select('order_index')
+    .eq('chapter_id', chapter_id)
+    .order('order_index', { ascending: false })
+    .limit(1)
+    .single();
+  const orderIndex = ((existing?.order_index) ?? 0) + 1;
+
   const { error } = await supabase.from('contents').insert({
     title,
     chapter_id,
-    type,
-    difficulty,
+    type: 'summary',   // Only résumés
     body: mdx_content,
     status: 'published',
+    order_index: orderIndex,
   });
 
   if (error) {
@@ -40,8 +48,6 @@ export async function updateContent(id: string, formData: FormData) {
 
   const title = formData.get('title') as string;
   const chapter_id = formData.get('chapter_id') as string;
-  const type = formData.get('type') as string;
-  const difficulty = formData.get('difficulty') as string;
   const mdx_content = formData.get('mdx_content') as string;
 
   if (!title || !chapter_id || !mdx_content) {
@@ -51,8 +57,7 @@ export async function updateContent(id: string, formData: FormData) {
   const { error } = await supabase.from('contents').update({
     title,
     chapter_id,
-    type,
-    difficulty,
+    type: 'summary',
     body: mdx_content,
   }).eq('id', id);
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Input } from '@/components/ui';
-import { Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { createContent, updateContent } from '../../../actions/content';
 
@@ -18,8 +18,6 @@ interface ContentFormProps {
     id: string;
     title: string;
     chapter_id: string;
-    type: string;
-    difficulty: string;
     body: string;
   };
 }
@@ -45,8 +43,15 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
       setError(result.error);
       setIsSubmitting(false);
     }
-    // Note: if success, action will redirect
   };
+
+  // Group chapters by subject for a better UX in the select
+  const grouped: Record<string, Chapter[]> = {};
+  chapters.forEach(c => {
+    const subjectName = c.subjects?.name || 'Sans matière';
+    if (!grouped[subjectName]) grouped[subjectName] = [];
+    grouped[subjectName].push(c);
+  });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl">
@@ -56,24 +61,30 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
         </div>
       )}
 
+      {/* Info banner */}
+      <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
+        <FileText className="w-4 h-4 flex-shrink-0" />
+        <span>Ce contenu sera créé en tant que <strong>Fiche de révision (Résumé)</strong> et publié immédiatement.</span>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <label htmlFor="title" className="text-sm font-medium text-navy-900">
-            Titre du contenu
+            Titre de la fiche
           </label>
           <Input 
             id="title" 
             name="title" 
-            placeholder="Ex: Les suites arithmétiques" 
+            placeholder="Ex: Résumé — Les suites arithmétiques" 
             required 
             disabled={isSubmitting}
             defaultValue={initialData?.title || ''}
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 md:col-span-2">
           <label htmlFor="chapter_id" className="text-sm font-medium text-navy-900">
-            Chapitre
+            Chapitre associé
           </label>
           <select 
             id="chapter_id"
@@ -84,55 +95,23 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
             className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
           >
             <option value="">Sélectionner un chapitre</option>
-            {chapters.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.subjects?.name} - {c.title}
-              </option>
+            {Object.entries(grouped).map(([subjectName, chaps]) => (
+              <optgroup key={subjectName} label={subjectName}>
+                {chaps.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </optgroup>
             ))}
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="type" className="text-sm font-medium text-navy-900">
-            Type de contenu
-          </label>
-          <select 
-            id="type"
-            name="type"
-            required
-            disabled={isSubmitting}
-            defaultValue={initialData?.type || 'lesson'}
-            className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
-          >
-            <option value="lesson">Leçon</option>
-            <option value="summary">Résumé (Fiche de révision)</option>
-            <option value="resource">Ressource Annexe</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="difficulty" className="text-sm font-medium text-navy-900">
-            Difficulté
-          </label>
-          <select 
-            id="difficulty"
-            name="difficulty"
-            required
-            disabled={isSubmitting}
-            defaultValue={initialData?.difficulty || 'easy'}
-            className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
-          >
-            <option value="easy">Facile</option>
-            <option value="intermediate">Intermédiaire</option>
-            <option value="hard">Difficile</option>
           </select>
         </div>
       </div>
 
       <div className="space-y-2">
         <label htmlFor="mdx_content" className="text-sm font-medium text-navy-900 flex justify-between">
-          <span>Contenu (Format MDX)</span>
-          <span className="text-gray-400 font-normal">Prend en charge KaTeX ($$)</span>
+          <span>Contenu de la fiche (Format MDX)</span>
+          <span className="text-gray-400 font-normal">Prend en charge KaTeX ($$...$$)</span>
         </label>
         <textarea 
           id="mdx_content"
@@ -140,8 +119,8 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
           required
           disabled={isSubmitting}
           defaultValue={initialData?.body || ''}
-          className="w-full h-96 p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 font-mono text-sm resize-y"
-          placeholder="# Titre principal&#10;&#10;Voici une formule : $$f(x) = x^2$$"
+          className="w-full h-[480px] p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 font-mono text-sm resize-y"
+          placeholder={"# Titre de la fiche\n\n## Section 1\n\nVoici une formule : $$f(x) = x^2$$\n\n- Point clé 1\n- Point clé 2"}
         />
       </div>
 
@@ -152,7 +131,7 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
             Retour
           </Button>
         </Link>
-        <Button type="submit" disabled={isSubmitting} className="bg-navy-900 hover:bg-navy-900/90">
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -161,7 +140,7 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
           ) : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              {initialData ? 'Enregistrer les modifications' : 'Publier le contenu'}
+              {initialData ? 'Enregistrer les modifications' : 'Publier la fiche'}
             </>
           )}
         </Button>

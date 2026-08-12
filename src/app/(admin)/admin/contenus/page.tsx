@@ -11,7 +11,6 @@ export default async function ContenusManager() {
     .select(`
       id,
       title,
-      type,
       status,
       created_at,
       chapters (
@@ -21,6 +20,7 @@ export default async function ContenusManager() {
         )
       )
     `)
+    .eq('type', 'summary')
     .order('created_at', { ascending: false });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +29,6 @@ export default async function ContenusManager() {
     titre: c.title,
     matiere: c.chapters?.subjects?.name || 'Inconnue',
     chapitre: c.chapters?.title || 'Inconnu',
-    type: c.type === 'lesson' ? 'Leçon' : c.type === 'summary' ? 'Résumé' : 'Ressource',
     statut: c.status === 'published' ? (
       <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Publié</Badge>
     ) : c.status === 'archived' ? (
