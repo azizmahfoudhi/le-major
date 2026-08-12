@@ -105,9 +105,9 @@ export async function updateSession(request: NextRequest) {
       const { data: activations } = await supabase
         .from('student_activations')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('student_id', user.id)
         .eq('is_active', true)
-        .gt('expires_at', new Date().toISOString())
+        .gt('end_date', new Date().toISOString())
         .limit(1);
 
       if (!activations || activations.length === 0) {
