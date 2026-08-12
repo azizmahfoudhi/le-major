@@ -24,11 +24,13 @@ export default function PacksClient({ initialPacks }: { initialPacks: Pack[] }) 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [priceTnd, setPriceTnd] = useState('');
+  const [durationDays, setDurationDays] = useState('365');
   const [isActive, setIsActive] = useState(true);
 
   const columns = [
     { accessorKey: 'nom', header: 'Nom du pack' },
     { accessorKey: 'prix', header: 'Prix' },
+    { accessorKey: 'duree', header: 'Durée (jours)' },
     { accessorKey: 'etudiants', header: 'Étudiants actifs' },
     { 
       accessorKey: 'statut', 
@@ -46,6 +48,7 @@ export default function PacksClient({ initialPacks }: { initialPacks: Pack[] }) 
     setName('');
     setDescription('');
     setPriceTnd('');
+    setDurationDays('365');
     setIsActive(true);
     setIsModalOpen(true);
   };
@@ -55,6 +58,7 @@ export default function PacksClient({ initialPacks }: { initialPacks: Pack[] }) 
     setName((pack._raw.name as string) || '');
     setDescription((pack._raw.description as string) || '');
     setPriceTnd((pack._raw.price_tnd as number)?.toString() || '');
+    setDurationDays((pack._raw.duration_days as number)?.toString() || '365');
     setIsActive(pack._raw.is_active as boolean);
     setIsModalOpen(true);
   };
@@ -73,6 +77,7 @@ export default function PacksClient({ initialPacks }: { initialPacks: Pack[] }) 
         name,
         description,
         price_tnd: parseFloat(priceTnd) || 0,
+        duration_days: parseInt(durationDays) || 365,
         is_active: isActive
       };
       
@@ -162,6 +167,15 @@ export default function PacksClient({ initialPacks }: { initialPacks: Pack[] }) 
                   step="0.1"
                   value={priceTnd} 
                   onChange={e => setPriceTnd(e.target.value)} 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Durée (jours)</label>
+                <Input 
+                  required 
+                  type="number" 
+                  value={durationDays} 
+                  onChange={e => setDurationDays(e.target.value)} 
                 />
               </div>
               <div className="flex items-center gap-2">

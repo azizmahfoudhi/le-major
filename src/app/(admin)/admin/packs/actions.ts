@@ -3,26 +3,28 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function createPack(data: { name: string; description: string; price_tnd: number; is_active: boolean }) {
+export async function createPack(data: { name: string; description: string; price_tnd: number; is_active: boolean; duration_days: number }) {
   const supabase = await createClient();
   const { error } = await supabase.from('packages').insert({
     name: data.name,
     description: data.description,
     price_tnd: data.price_tnd,
     is_active: data.is_active,
+    duration_days: data.duration_days,
   });
 
   if (error) throw new Error(error.message);
   revalidatePath('/admin/packs');
 }
 
-export async function updatePack(id: string, data: { name: string; description: string; price_tnd: number; is_active: boolean }) {
+export async function updatePack(id: string, data: { name: string; description: string; price_tnd: number; is_active: boolean; duration_days: number }) {
   const supabase = await createClient();
   const { error } = await supabase.from('packages').update({
     name: data.name,
     description: data.description,
     price_tnd: data.price_tnd,
     is_active: data.is_active,
+    duration_days: data.duration_days,
   }).eq('id', id);
 
   if (error) throw new Error(error.message);
