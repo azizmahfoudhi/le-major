@@ -22,9 +22,23 @@ export default async function DashboardPage() {
   }
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-  const studentName = profile?.first_name 
-    ? `${profile.first_name} ${profile.last_name || ''}`.trim() 
-    : "Étudiant";
+
+  // Auto-heal: if profile is missing the name, pull from auth metadata and persist it
+  let firstName = profile?.first_name;
+  let lastName = profile?.last_name;
+
+  if (!firstName) {
+    firstName = user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || null;
+    lastName = lastName || user.user_metadata?.last_name || (user.user_metadata?.full_name?.split(' ').slice(1).join(' ')) || null;
+
+    if (firstName) {
+      await supabase.from('profiles').update({ first_name: firstName, last_name: lastName }).eq('id', user.id);
+    }
+  }
+
+  const studentName = firstName
+    ? `${firstName} ${lastName || ''}`.trim()
+    : user.email?.split('@')[0] || 'Étudiant';
   
   const today = new Date().toLocaleDateString('fr-FR', { 
     weekday: 'long', 

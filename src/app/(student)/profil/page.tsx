@@ -27,6 +27,17 @@ export default async function ProfilePage() {
     .eq('id', user?.id)
     .single();
 
+  // Auto-heal: pull from auth metadata if profile name is missing
+  let profileFirstName = profile?.first_name;
+  let profileLastName = profile?.last_name;
+  if (!profileFirstName) {
+    profileFirstName = user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || null;
+    profileLastName = profileLastName || user.user_metadata?.last_name || (user.user_metadata?.full_name?.split(' ').slice(1).join(' ')) || null;
+    if (profileFirstName) {
+      await supabase.from('profiles').update({ first_name: profileFirstName, last_name: profileLastName }).eq('id', user.id);
+    }
+  }
+
   const { data: activations } = await supabase
     .from('student_activations')
     .select(`
@@ -37,8 +48,8 @@ export default async function ProfilePage() {
     .eq('is_active', true)
     .gt('end_date', new Date().toISOString());
 
-  const displayName = profile?.first_name
-    ? `${profile.first_name} ${profile.last_name ?? ''}`.trim()
+  const displayName = profileFirstName
+    ? `${profileFirstName} ${profileLastName ?? ''}`.trim()
     : user?.email ?? 'Étudiant';
 
   const email = profile?.email ?? user?.email ?? '';
@@ -73,8 +84,8 @@ export default async function ProfilePage() {
         </CardContent>
         <CardFooter className="bg-gray-50 border-t border-gray-100 flex justify-end">
           <ProfileInfoEditor initialProfile={{
-            first_name: profile?.first_name || null,
-            last_name: profile?.last_name || null,
+            first_name: profileFirstName || null,
+            last_name: profileLastName || null,
             phone_number: profile?.phone_number || null,
           }} />
         </CardFooter>
