@@ -46,10 +46,14 @@ export default function StudentNav() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-navy-800 text-navy-200 hover:text-white transition-colors">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profil"
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-navy-800 text-navy-200 hover:text-white hover:bg-navy-700 transition-colors"
+            title="Mon profil"
+          >
             <User className="w-4 h-4" />
-          </button>
+          </Link>
           
           <button 
             className="md:hidden text-navy-200 hover:text-white"

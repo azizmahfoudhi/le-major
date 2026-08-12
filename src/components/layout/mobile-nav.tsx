@@ -1,10 +1,11 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
 import Image from 'next/image';
+import { signOut } from '@/app/(auth)/signout/actions';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -62,6 +63,27 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
               );
             })}
           </nav>
+        </div>
+
+        {/* Footer: Profile + Logout */}
+        <div className="border-t border-navy-800 p-4 flex flex-col gap-2">
+          <Link
+            href="/profil"
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium text-navy-200 hover:bg-navy-800/50 hover:text-white transition-colors"
+          >
+            <User className="w-4 h-4" />
+            Mon Profil
+          </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Se déconnecter
+            </button>
+          </form>
         </div>
       </div>
     </div>

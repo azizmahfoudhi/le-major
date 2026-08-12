@@ -1,7 +1,9 @@
-﻿import { Metadata } from 'next';
+import { Metadata } from 'next';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Mail, CreditCard, LogOut, Shield } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { signOut } from '@/app/(auth)/signout/actions';
 
 export const metadata: Metadata = {
   title: 'Mon Profil | Le Major',
@@ -9,14 +11,20 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  // TODO: Fetch actual user from Supabase auth
-  const user = {
-    firstName: 'Alexandre',
-    lastName: 'Dupont',
-    email: 'alexandre.dupont@example.com',
-    plan: 'Premium Annuel',
-    expiryDate: '15 Septembre 2027',
-  };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('first_name, last_name, email')
+    .eq('id', user?.id)
+    .single();
+
+  const displayName = profile?.first_name
+    ? `${profile.first_name} ${profile.last_name ?? ''}`.trim()
+    : user?.email ?? 'Étudiant';
+
+  const email = profile?.email ?? user?.email ?? '';
 
   return (
     <div className="space-y-8 pb-12 max-w-3xl">
@@ -34,21 +42,15 @@ export default async function ProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Prénom</label>
-              <p className="text-navy-900 font-medium mt-1">{user.firstName}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Nom</label>
-              <p className="text-navy-900 font-medium mt-1">{user.lastName}</p>
-            </div>
+          <div>
+            <label className="text-sm font-medium text-gray-500">Nom complet</label>
+            <p className="text-navy-900 font-medium mt-1">{displayName}</p>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-500">Adresse email</label>
             <div className="flex items-center gap-2 mt-1">
               <Mail className="w-4 h-4 text-gray-400" />
-              <p className="text-navy-900 font-medium">{user.email}</p>
+              <p className="text-navy-900 font-medium">{email}</p>
             </div>
           </div>
         </CardContent>
@@ -68,8 +70,8 @@ export default async function ProfilePage() {
         <CardContent>
           <div className="p-4 border border-gold-500/20 bg-gold-500/5 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h3 className="font-medium text-navy-900 text-lg">{user.plan}</h3>
-              <p className="text-sm text-gray-600 mt-1">Valide jusqu'au {user.expiryDate}</p>
+              <h3 className="font-medium text-navy-900 text-lg">Accès Premium</h3>
+              <p className="text-sm text-gray-600 mt-1">Géré via votre code d&apos;activation</p>
             </div>
             <span className="px-3 py-1 bg-gold-500 text-white text-sm font-medium rounded-full">
               Actif
@@ -77,7 +79,7 @@ export default async function ProfilePage() {
           </div>
         </CardContent>
         <CardFooter className="bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-          <Button variant="outline">Gérer l'abonnement</Button>
+          <Button variant="outline">Gérer l&apos;abonnement</Button>
         </CardFooter>
       </Card>
 
@@ -98,11 +100,17 @@ export default async function ProfilePage() {
       </Card>
 
       {/* Déconnexion */}
-      <div className="pt-4">
-        <Button variant="ghost" className="text-rose-600 hover:text-rose-700 hover:bg-rose-50">
-          <LogOut className="w-4 h-4 mr-2" />
-          Se déconnecter
-        </Button>
+      <div className="pt-4 border-t border-gray-100">
+        <form action={signOut}>
+          <Button
+            type="submit"
+            variant="ghost"
+            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-medium"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Se déconnecter
+          </Button>
+        </form>
       </div>
     </div>
   );
