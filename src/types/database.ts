@@ -43,18 +43,9 @@ export interface Level {
   updated_at: string;
 }
 
-export interface Edition {
-  id: string;
-  level_id: string;
-  academic_year: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Semester {
   id: string;
-  edition_id: string;
+  level_id: string;
   name: string;
   order_index: number;
   created_at: string;

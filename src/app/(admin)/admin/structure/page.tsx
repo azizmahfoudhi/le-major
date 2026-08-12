@@ -9,8 +9,7 @@ function getChildType(type: string) {
   switch (type) {
     case 'Université': return 'Formation';
     case 'Formation': return 'Niveau';
-    case 'Niveau': return 'Édition';
-    case 'Édition': return 'Semestre';
+    case 'Niveau': return 'Semestre';   // Édition removed — Semestre links directly to Niveau
     case 'Semestre': return 'Matière';
     case 'Matière': return 'Chapitre';
     default: return null;
