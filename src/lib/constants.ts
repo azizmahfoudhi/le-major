@@ -52,10 +52,10 @@ export const STUDENT_NAV = [
 ] as const;
 
 export const ADMIN_NAV = [
-  { section: 'Contenu', items: [
+  { section: 'Gestion', items: [
     { label: 'Tableau de bord', href: ROUTES.admin, icon: 'LayoutDashboard' },
     { label: 'Structure', href: ROUTES.adminStructure, icon: 'Building2' },
-    { label: 'Contenus', href: ROUTES.adminContenus, icon: 'FileText' },
+    { label: 'Résumés', href: ROUTES.adminContenus, icon: 'FileText' },
     { label: 'Ressources', href: ROUTES.adminRessources, icon: 'FolderOpen' },
     { label: 'Exercices', href: ROUTES.adminExercices, icon: 'PenTool' },
     { label: 'Séries', href: ROUTES.adminSeries, icon: 'Layers' },
