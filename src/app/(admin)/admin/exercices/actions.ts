@@ -6,7 +6,6 @@ import { revalidatePath } from 'next/cache';
 export async function createExercise(data: { 
   title: string; 
   difficulty: string; 
-  is_free: boolean; 
   subject_id: string; 
   statement_body: string; 
   solution_body: string; 
@@ -19,7 +18,7 @@ export async function createExercise(data: {
   const { error } = await supabase.from('exercises').insert({
     title: data.title,
     difficulty: data.difficulty,
-    is_free: data.is_free,
+    is_free: false,
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,
@@ -36,7 +35,6 @@ export async function createExercise(data: {
 export async function updateExercise(id: string, data: { 
   title: string; 
   difficulty: string; 
-  is_free: boolean; 
   subject_id: string; 
   statement_body: string; 
   solution_body: string; 
@@ -49,7 +47,7 @@ export async function updateExercise(id: string, data: {
   const { error } = await supabase.from('exercises').update({
     title: data.title,
     difficulty: data.difficulty,
-    is_free: data.is_free,
+    is_free: false,
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,

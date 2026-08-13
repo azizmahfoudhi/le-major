@@ -34,7 +34,6 @@ export default function ExercicesClient({
   // Form State
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
-  const [isFree, setIsFree] = useState(true);
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
@@ -58,7 +57,6 @@ export default function ExercicesClient({
     setEditingItem(null);
     setTitle('');
     setDifficulty('easy');
-    setIsFree(true);
     setSubjectId(subjects[0]?.id || '');
     setStatement('');
     setSolution('');
@@ -73,7 +71,6 @@ export default function ExercicesClient({
     setEditingItem(ex._raw);
     setTitle((ex._raw.title as string) || '');
     setDifficulty((ex._raw.difficulty as string) || 'easy');
-    setIsFree((ex._raw.is_free as boolean) ?? true);
     setSubjectId((ex._raw.subject_id as string) || subjects[0]?.id || '');
     setStatement((ex._raw.statement_body as string) || '');
     setSolution((ex._raw.solution_body as string) || '');
@@ -97,7 +94,6 @@ export default function ExercicesClient({
       const payload = {
         title,
         difficulty,
-        is_free: isFree,
         subject_id: subjectId,
         statement_body: statement,
         solution_body: solution,
@@ -260,15 +256,6 @@ export default function ExercicesClient({
                   />
                 </div>
                 <div className="col-span-3 sm:col-span-1 flex items-end pb-2">
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="isFree"
-                      checked={isFree}
-                      onChange={e => setIsFree(e.target.checked)}
-                    />
-                    <label htmlFor="isFree" className="text-sm font-medium text-gray-700">Contenu Gratuit</label>
-                  </div>
                 </div>
               </div>
 
