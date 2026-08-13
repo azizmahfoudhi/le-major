@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Plus, FileText, Edit, Trash2, Search } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Plus, FileText, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Button, Badge } from '@/components/ui';
 import { DataTable } from '@/components/admin/data-table';
 import { deleteContent } from '../../actions/content';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ type ContentItem = {
   titre: string;
   matiere: string;
   chapitre: string;
+  type: string;
   statut: React.ReactNode;
   date: string;
 };
@@ -25,6 +26,7 @@ export default function ContenusClient({
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [filterMatiere, setFilterMatiere] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   // Get unique matières for the filter dropdown
   const matieres = useMemo(() => {
@@ -32,14 +34,33 @@ export default function ContenusClient({
     return unique;
   }, [initialContents]);
 
-  // Filter content by selected matière
+  // Filter content by selected matière and type
   const filtered = useMemo(() => {
-    if (!filterMatiere) return initialContents;
-    return initialContents.filter(c => c.matiere === filterMatiere);
-  }, [initialContents, filterMatiere]);
+    return initialContents.filter(c => {
+      const matchMatiere = !filterMatiere || c.matiere === filterMatiere;
+      const matchType = filterType === 'all' || c.type === filterType;
+      return matchMatiere && matchType;
+    });
+  }, [initialContents, filterMatiere, filterType]);
 
   const columns = [
     { accessorKey: 'titre', header: 'Titre' },
+    { 
+      accessorKey: 'type', 
+      header: 'Type',
+      cell: (item: ContentItem) => {
+        const t = item.type;
+        return (
+          <Badge variant="outline" className={
+            t === 'summary' 
+              ? "text-blue-600 border-blue-200 bg-blue-50"
+              : "text-purple-600 border-purple-200 bg-purple-50"
+          }>
+            {t === 'summary' ? 'Résumé' : 'Ressource'}
+          </Badge>
+        );
+      }
+    },
     { accessorKey: 'matiere', header: 'Matière' },
     { accessorKey: 'chapitre', header: 'Chapitre' },
     { accessorKey: 'statut', header: 'Statut' },
@@ -47,7 +68,7 @@ export default function ContenusClient({
   ];
 
   const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette fiche ?')) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
       setLoadingId(id);
       try {
         await deleteContent(id);
@@ -64,35 +85,50 @@ export default function ContenusClient({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Fiches de Révision</h1>
-          <p className="text-gray-500 mt-1">Gérez les résumés et fiches par chapitre.</p>
+          <h1 className="text-2xl font-bold text-navy-900 font-playfair">Contenus & Ressources</h1>
+          <p className="text-gray-500 mt-1">Gérez les fiches de révision et ressources annexes.</p>
         </div>
         <Link href="/admin/contenus/nouveau">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Nouvelle Fiche
+            Nouveau Contenu
           </Button>
         </Link>
       </div>
 
-      {/* Filter by matière */}
-      {matieres.length > 1 && (
-        <div className="flex items-center gap-3">
-          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4">
+        {matieres.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <select
+              value={filterMatiere}
+              onChange={e => setFilterMatiere(e.target.value)}
+              className="h-9 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-navy-900"
+            >
+              <option value="">Toutes les matières</option>
+              {matieres.map(m => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <select
-            value={filterMatiere}
-            onChange={e => setFilterMatiere(e.target.value)}
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
             className="h-9 px-3 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-navy-900"
           >
-            <option value="">Toutes les matières ({initialContents.length})</option>
-            {matieres.map(m => (
-              <option key={m} value={m}>
-                {m} ({initialContents.filter(c => c.matiere === m).length})
-              </option>
-            ))}
+            <option value="all">Tous les types</option>
+            <option value="summary">Résumés</option>
+            <option value="resource">Ressources</option>
           </select>
         </div>
-      )}
+      </div>
 
       <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
         {filtered.length > 0 ? (
@@ -100,7 +136,7 @@ export default function ContenusClient({
             columns={columns} 
             data={filtered}
             enableSearch={true}
-            searchPlaceholder="Rechercher une fiche..."
+            searchPlaceholder="Rechercher un contenu..."
             actions={(item) => (
               <div className="flex justify-end gap-2">
                 <Link href={`/admin/contenus/${item.id}/modifier`}>
@@ -123,11 +159,11 @@ export default function ContenusClient({
           <div className="p-12 text-center text-gray-500 flex flex-col items-center">
             <FileText className="w-12 h-12 text-gray-300 mb-4" />
             <p className="mb-4">
-              {filterMatiere ? `Aucune fiche pour la matière "${filterMatiere}".` : "Aucune fiche de révision n'a été créée."}
+              Aucun contenu ne correspond à vos filtres.
             </p>
-            {!filterMatiere && (
+            {(!filterMatiere && filterType === 'all') && (
               <Link href="/admin/contenus/nouveau">
-                <Button><Plus className="w-4 h-4 mr-2" />Créer la première fiche</Button>
+                <Button><Plus className="w-4 h-4 mr-2" />Créer le premier contenu</Button>
               </Link>
             )}
           </div>

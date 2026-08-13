@@ -34,14 +34,15 @@ export default async function ModifierContenuPage({ params }: { params: Promise<
     id: content.id,
     title: content.title,
     chapter_id: content.chapter_id,
+    type: content.type,
     body: content.body,
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-900 font-playfair">Modifier la Fiche</h1>
-        <p className="text-gray-500 mt-1">Mettez à jour votre fiche de révision.</p>
+        <h1 className="text-2xl font-bold text-navy-900 font-playfair">Modifier</h1>
+        <p className="text-gray-500 mt-1">Mettez à jour votre fiche de révision ou ressource.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-card border border-gray-100 p-6 sm:p-8">

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button, Input } from '@/components/ui';
-import { Save, ArrowLeft, Loader2, FileText } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { createContent, updateContent } from '../../../actions/content';
+import MediaPicker from './media-picker';
 
 interface Chapter {
   id: string;
@@ -18,6 +19,7 @@ interface ContentFormProps {
     id: string;
     title: string;
     chapter_id: string;
+    type: string;
     body: string;
   };
 }
@@ -25,6 +27,10 @@ interface ContentFormProps {
 export default function ContentForm({ chapters, initialData }: ContentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Track text content and textarea ref for markdown insertion
+  const [mdxContent, setMdxContent] = useState(initialData?.body || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,6 +51,23 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
     }
   };
 
+  const handleMediaSelect = (markdownLink: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    
+    const newContent = mdxContent.substring(0, start) + markdownLink + mdxContent.substring(end);
+    setMdxContent(newContent);
+    
+    // Set focus back and adjust cursor position (need slight delay for state update)
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + markdownLink.length, start + markdownLink.length);
+    }, 0);
+  };
+
   // Group chapters by subject for a better UX in the select
   const grouped: Record<string, Chapter[]> = {};
   chapters.forEach(c => {
@@ -63,14 +86,14 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
 
       {/* Info banner */}
       <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
-        <FileText className="w-4 h-4 flex-shrink-0" />
-        <span>Ce contenu sera créé en tant que <strong>Fiche de révision (Résumé)</strong> et publié immédiatement.</span>
+        <Info className="w-4 h-4 flex-shrink-0" />
+        <span>Sélectionnez le type pour déterminer si ce contenu s'affiche comme fiche de révision ou comme ressource externe.</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="title" className="text-sm font-medium text-navy-900">
-            Titre de la fiche
+            Titre du contenu
           </label>
           <Input 
             id="title" 
@@ -82,7 +105,24 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
           />
         </div>
 
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
+          <label htmlFor="type" className="text-sm font-medium text-navy-900">
+            Type de contenu
+          </label>
+          <select 
+            id="type"
+            name="type"
+            required
+            disabled={isSubmitting}
+            defaultValue={initialData?.type || 'summary'}
+            className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
+          >
+            <option value="summary">Résumé (Fiche de révision)</option>
+            <option value="resource">Ressource Annexe</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="chapter_id" className="text-sm font-medium text-navy-900">
             Chapitre associé
           </label>
@@ -109,19 +149,26 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="mdx_content" className="text-sm font-medium text-navy-900 flex justify-between">
-          <span>Contenu de la fiche (Format MDX)</span>
-          <span className="text-gray-400 font-normal">Prend en charge KaTeX ($$...$$)</span>
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="mdx_content" className="text-sm font-medium text-navy-900">
+            Contenu de la fiche (Format MDX)
+          </label>
+          <MediaPicker onSelect={handleMediaSelect} />
+        </div>
         <textarea 
+          ref={textareaRef}
           id="mdx_content"
           name="mdx_content"
           required
           disabled={isSubmitting}
-          defaultValue={initialData?.body || ''}
+          value={mdxContent}
+          onChange={(e) => setMdxContent(e.target.value)}
           className="w-full h-[480px] p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 font-mono text-sm resize-y"
           placeholder={"# Titre de la fiche\n\n## Section 1\n\nVoici une formule : $$f(x) = x^2$$\n\n- Point clé 1\n- Point clé 2"}
         />
+        <p className="text-xs text-gray-400 mt-2">
+          Prend en charge KaTeX ($$...$$) et l'intégration d'images via le bouton ci-dessus.
+        </p>
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -140,7 +187,7 @@ export default function ContentForm({ chapters, initialData }: ContentFormProps)
           ) : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              {initialData ? 'Enregistrer les modifications' : 'Publier la fiche'}
+              {initialData ? 'Enregistrer les modifications' : 'Publier le contenu'}
             </>
           )}
         </Button>

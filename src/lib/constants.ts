@@ -55,8 +55,7 @@ export const ADMIN_NAV = [
   { section: 'Gestion', items: [
     { label: 'Tableau de bord', href: ROUTES.admin, icon: 'LayoutDashboard' },
     { label: 'Structure', href: ROUTES.adminStructure, icon: 'Building2' },
-    { label: 'Résumés', href: ROUTES.adminContenus, icon: 'FileText' },
-    { label: 'Ressources', href: ROUTES.adminRessources, icon: 'FolderOpen' },
+    { label: 'Contenus', href: ROUTES.adminContenus, icon: 'FileText' },
     { label: 'Exercices', href: ROUTES.adminExercices, icon: 'PenTool' },
     { label: 'Séries', href: ROUTES.adminSeries, icon: 'Layers' },
     { label: 'Examens', href: ROUTES.adminExamens, icon: 'ClipboardList' },

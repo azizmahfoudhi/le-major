@@ -6,11 +6,13 @@ import { Badge } from '@/components/ui';
 export default async function ContenusManager() {
   const supabase = await createClient();
 
+  // Get all summaries and resources
   const { data: contents } = await supabase
     .from('contents')
     .select(`
       id,
       title,
+      type,
       status,
       created_at,
       chapters (
@@ -20,7 +22,7 @@ export default async function ContenusManager() {
         )
       )
     `)
-    .eq('type', 'summary')
+    .in('type', ['summary', 'resource'])
     .order('created_at', { ascending: false });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,6 +31,7 @@ export default async function ContenusManager() {
     titre: c.title,
     matiere: c.chapters?.subjects?.name || 'Inconnue',
     chapitre: c.chapters?.title || 'Inconnu',
+    type: c.type, // 'summary' or 'resource'
     statut: c.status === 'published' ? (
       <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Publié</Badge>
     ) : c.status === 'archived' ? (

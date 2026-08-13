@@ -9,13 +9,14 @@ export async function createContent(formData: FormData) {
 
   const title = formData.get('title') as string;
   const chapter_id = formData.get('chapter_id') as string;
+  const type = formData.get('type') as string;
   const mdx_content = formData.get('mdx_content') as string;
 
-  if (!title || !chapter_id || !mdx_content) {
+  if (!title || !chapter_id || !type || !mdx_content) {
     return { success: false, error: 'Veuillez remplir tous les champs obligatoires.' };
   }
 
-  // Auto-increment order_index within the chapter
+  // Auto-increment order_index within the chapter (regardless of type to keep them mixed or sequential)
   const { data: existing } = await supabase
     .from('contents')
     .select('order_index')
@@ -28,7 +29,7 @@ export async function createContent(formData: FormData) {
   const { error } = await supabase.from('contents').insert({
     title,
     chapter_id,
-    type: 'summary',   // Only résumés
+    type,
     body: mdx_content,
     status: 'published',
     order_index: orderIndex,
@@ -48,16 +49,17 @@ export async function updateContent(id: string, formData: FormData) {
 
   const title = formData.get('title') as string;
   const chapter_id = formData.get('chapter_id') as string;
+  const type = formData.get('type') as string;
   const mdx_content = formData.get('mdx_content') as string;
 
-  if (!title || !chapter_id || !mdx_content) {
+  if (!title || !chapter_id || !type || !mdx_content) {
     return { success: false, error: 'Veuillez remplir tous les champs obligatoires.' };
   }
 
   const { error } = await supabase.from('contents').update({
     title,
     chapter_id,
-    type: 'summary',
+    type,
     body: mdx_content,
   }).eq('id', id);
 
