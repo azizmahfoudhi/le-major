@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, ClipboardList, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { DataTable } from '@/components/admin/data-table';
 import { createExam, updateExam, deleteExam } from '../../actions/examens';
+import MediaPicker from '@/components/admin/media-picker';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function ExamensClient({ initialExams, subjects }: { initialExams: any[]; subjects: any[] }) {
@@ -13,6 +14,11 @@ export default function ExamensClient({ initialExams, subjects }: { initialExams
   const [error, setError] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingExam, setEditingExam] = useState<any>(null);
+
+  const [statement, setStatement] = useState('');
+  const [correction, setCorrection] = useState('');
+  const statementRef = React.useRef<HTMLTextAreaElement>(null);
+  const correctionRef = React.useRef<HTMLTextAreaElement>(null);
 
   const columns = [
     { accessorKey: 'titre', header: 'Titre de l\'examen' },
@@ -59,12 +65,35 @@ export default function ExamensClient({ initialExams, subjects }: { initialExams
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openEdit = (exam: any) => {
     setEditingExam(exam);
+    setStatement(exam._raw.statement || '');
+    setCorrection(exam._raw.correction || '');
     setIsModalOpen(true);
   };
 
   const openCreate = () => {
     setEditingExam(null);
+    setStatement('');
+    setCorrection('');
     setIsModalOpen(true);
+  };
+
+  const handleMediaSelect = (markdownLink: string, target: 'statement' | 'correction') => {
+    const ref = target === 'statement' ? statementRef.current : correctionRef.current;
+    if (!ref) return;
+    
+    const start = ref.selectionStart;
+    const end = ref.selectionEnd;
+    
+    const currentText = target === 'statement' ? statement : correction;
+    const newContent = currentText.substring(0, start) + markdownLink + currentText.substring(end);
+    
+    if (target === 'statement') setStatement(newContent);
+    else setCorrection(newContent);
+    
+    setTimeout(() => {
+      ref.focus();
+      ref.setSelectionRange(start + markdownLink.length, start + markdownLink.length);
+    }, 0);
   };
 
   return (
@@ -190,25 +219,35 @@ export default function ExamensClient({ initialExams, subjects }: { initialExams
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="statement" className="text-sm font-medium text-navy-900">Énoncé Global (Optionnel, Markdown)</label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="statement" className="text-sm font-medium text-navy-900">Énoncé Global (Optionnel, Markdown / KaTeX)</label>
+                    <MediaPicker onSelect={(link) => handleMediaSelect(link, 'statement')} />
+                  </div>
                   <textarea 
                     id="statement" 
                     name="statement" 
+                    ref={statementRef}
                     rows={4}
-                    defaultValue={editingExam?._raw.statement || ''}
-                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
+                    value={statement}
+                    onChange={(e) => setStatement(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm font-mono"
                     placeholder="Énoncé général de l'examen s'il ne peut pas être découpé uniquement en exercices."
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="correction" className="text-sm font-medium text-navy-900">Correction Globale (Optionnelle, Markdown)</label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="correction" className="text-sm font-medium text-navy-900">Correction Globale (Optionnelle, Markdown / KaTeX)</label>
+                    <MediaPicker onSelect={(link) => handleMediaSelect(link, 'correction')} />
+                  </div>
                   <textarea 
                     id="correction" 
                     name="correction" 
+                    ref={correctionRef}
                     rows={4}
-                    defaultValue={editingExam?._raw.correction || ''}
-                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm"
+                    value={correction}
+                    onChange={(e) => setCorrection(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-900 text-sm font-mono"
                     placeholder="Correction générale de l'examen."
                   />
                 </div>
