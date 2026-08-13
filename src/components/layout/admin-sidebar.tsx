@@ -54,7 +54,7 @@ export default function AdminSidebar() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-navy-800">
           {!isCollapsed && (
             <Link href="/admin" className="flex flex-col">
-              <Logo variant="light" className="h-11 w-auto" />
+              <Logo variant="light" showText className="h-11 w-auto" />
               <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
             </Link>
           )}
@@ -124,7 +124,7 @@ export default function AdminSidebar() {
       {/* Mobile top bar for admin */}
       <div className="md:hidden flex items-center justify-between h-16 bg-navy-950 px-4 border-b border-navy-800">
         <Link href="/admin" className="flex flex-col">
-          <Logo variant="light" className="h-10 w-auto" />
+          <Logo variant="light" showText className="h-10 w-auto" />
           <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
         </Link>
         <form action={signOut}>

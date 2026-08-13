@@ -28,7 +28,7 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
       <div className="relative w-64 max-w-xs flex flex-col bg-navy-900 border-r border-navy-800 shadow-xl h-full animate-slide-right">
         <div className="flex items-center justify-between h-16 px-4 border-b border-navy-800">
           <Link href="/accueil" onClick={onClose}>
-            <Logo variant="light" className="h-11 w-auto" />
+            <Logo variant="light" showText className="h-11 w-auto" />
           </Link>
           <button 
             onClick={onClose}
