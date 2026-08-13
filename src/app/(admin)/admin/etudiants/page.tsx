@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui';
 export default async function EtudiantsManager() {
   const supabase = await createClient();
 
-  // Fetch profiles
+  // Fetch profiles with activations
   const { data: profiles } = await supabase
     .from('profiles')
     .select(`
@@ -19,9 +19,26 @@ export default async function EtudiantsManager() {
       ),
       formations (
         name
+      ),
+      student_activations (
+        id,
+        is_active,
+        start_date,
+        end_date,
+        packages (
+          id,
+          name
+        )
       )
     `)
     .order('created_at', { ascending: false });
+
+  // Fetch packages for the grant modal
+  const { data: packages } = await supabase
+    .from('packages')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formattedProfiles = (profiles || []).map((p: any) => ({
@@ -35,8 +52,8 @@ export default async function EtudiantsManager() {
     universite: p.universities?.name || 'Non renseignée',
     formation: p.formations?.name || 'Non renseignée',
     date: new Date(p.created_at).toLocaleDateString('fr-FR'),
-    _raw: p
+    _raw: p // Contains student_activations
   }));
 
-  return <EtudiantsClient initialStudents={formattedProfiles} />;
+  return <EtudiantsClient initialStudents={formattedProfiles} packages={packages || []} />;
 }
