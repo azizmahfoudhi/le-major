@@ -60,7 +60,7 @@ export default async function ChapterPage({
   // 4. Fetch Lessons (Contents)
   const { data: lessonsData } = await supabase
     .from('contents')
-    .select('id, title, slug, order_index')
+    .select('id, title, order_index')
     .eq('chapter_id', chapter.id)
     .order('order_index', { ascending: true });
 
@@ -78,7 +78,6 @@ export default async function ChapterPage({
   const lessons = (lessonsData || []).map(lesson => ({
     id: lesson.id,
     title: lesson.title,
-    slug: lesson.slug,
     read: isChapterCompleted
   }));
 
