@@ -19,7 +19,9 @@ export const metadata: Metadata = {
   title: 'Le Major',
   description: 'Le Major, votre plateforme académique d\'excellence.',
   icons: {
-    icon: '/favicon.png',
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+    ],
     apple: '/app_icon.png',
     shortcut: '/favicon.png',
   },
