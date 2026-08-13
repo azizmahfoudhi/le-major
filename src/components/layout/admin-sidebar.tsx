@@ -59,7 +59,7 @@ export default function AdminSidebar() {
                 alt="Le Major"
                 width={120}
                 height={32}
-                className="h-8 w-auto object-contain"
+                className="h-8 w-auto object-contain invert mix-blend-screen"
                 priority
               />
               <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
@@ -142,7 +142,7 @@ export default function AdminSidebar() {
             alt="Le Major"
             width={110}
             height={30}
-            className="h-7 w-auto object-contain"
+            className="h-7 w-auto object-contain invert mix-blend-screen"
           />
           <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
         </Link>

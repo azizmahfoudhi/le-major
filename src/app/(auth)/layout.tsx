@@ -20,7 +20,7 @@ export default function AuthLayout({
               alt="Le Major"
               width={200}
               height={60}
-              className="h-14 w-auto object-contain"
+              className="h-14 w-auto object-contain invert mix-blend-screen"
               priority
             />
           </Link>

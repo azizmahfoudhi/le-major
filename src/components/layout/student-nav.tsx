@@ -23,7 +23,7 @@ export default function StudentNav() {
               alt="Le Major"
               width={140}
               height={40}
-              className="h-9 w-auto object-contain"
+              className="h-9 w-auto object-contain invert mix-blend-screen"
               priority
             />
           </Link>

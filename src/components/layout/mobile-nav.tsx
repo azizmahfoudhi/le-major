@@ -33,7 +33,7 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
               alt="Le Major"
               width={120}
               height={36}
-              className="h-8 w-auto object-contain"
+              className="h-8 w-auto object-contain invert mix-blend-screen"
             />
           </Link>
           <button 
