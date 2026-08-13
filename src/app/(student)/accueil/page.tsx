@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, CheckCircle, Clock, Trophy, ArrowRight, BookMarked } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, Trophy, ArrowRight, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
   }
 
   const studentName = firstName
-    ? `${firstName} ${lastName || ''}`.trim()
+    ? `${firstName}`.trim()
     : user.email?.split('@')[0] || 'Étudiant';
   
   const today = new Date().toLocaleDateString('fr-FR', { 
@@ -47,14 +47,14 @@ export default async function DashboardPage() {
     day: 'numeric' 
   });
 
-  // Fetch student's packages and subjects
+  // Fetch student's active packs and their subjects
   const { data: activations } = await supabase
     .from('student_activations')
     .select(`
       packages (
         package_subjects (
           subjects (
-            id, name, slug, icon_name
+            id, name, slug
           )
         )
       )
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
     .eq('student_id', user.id)
     .eq('is_active', true);
 
-  // Extract unique subjects
+  // Extract unique subjects from active packs
   const subjectsMap = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activations?.forEach((act: any) => {
@@ -74,52 +74,42 @@ export default async function DashboardPage() {
     });
   });
   const mySubjects = Array.from(subjectsMap.values());
-
-  // If no active packages, fallback to showing all subjects just to not be empty
-  // (In a real scenario, you'd show an "Upgrade" message)
-  let subjectsToDisplay = mySubjects;
-  if (subjectsToDisplay.length === 0) {
-    const { data: allSubjects } = await supabase.from('subjects').select('id, name, slug, icon_name').limit(3);
-    subjectsToDisplay = allSubjects || [];
-  }
-
-  // Fetch chapters for these subjects
-  const subjectIds = subjectsToDisplay.map(s => s.id);
-  const { data: chapters } = await supabase
-    .from('chapters')
-    .select('id, subject_id')
-    .in('subject_id', subjectIds);
-
-  // Fetch progress
-  const { data: progress } = await supabase
-    .from('chapter_progress')
-    .select('chapter_id, chapters!inner(subject_id)')
-    .eq('student_id', user.id)
-    .eq('is_completed', true);
+  const hasActivePack = mySubjects.length > 0;
 
   const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-indigo-500', 'bg-rose-500'];
 
-  // Fetch exercise progress
-  const { count: completedExercisesCount } = await supabase
-    .from('exercise_progress')
-    .select('*', { count: 'exact', head: true })
-    .eq('student_id', user.id)
-    .eq('is_completed', true);
+  // Fetch chapters for the student's subjects
+  const subjectIds = mySubjects.map(s => s.id);
+  
+  const [chaptersResult, progressResult, exerciseStatsResult, examStatsResult] = await Promise.all([
+    subjectIds.length > 0
+      ? supabase.from('chapters').select('id, subject_id').in('subject_id', subjectIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from('chapter_progress')
+      .select('chapter_id, chapters!inner(subject_id)')
+      .eq('student_id', user.id)
+      .eq('is_completed', true),
+    supabase
+      .from('exercise_progress')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', user.id)
+      .eq('status', 'completed'),    // <-- Fixed: use 'status' not 'is_completed'
+    supabase
+      .from('exam_attempts')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', user.id)
+      .eq('status', 'completed'),
+  ]);
 
-  // Fetch exam attempts
-  const { count: examAttemptsCount } = await supabase
-    .from('exam_attempts')
-    .select('*', { count: 'exact', head: true })
-    .eq('student_id', user.id)
-    .eq('status', 'completed');
+  const chapters = chaptersResult.data || [];
+  const progress = progressResult.data || [];
 
-  const subjectsProgress = subjectsToDisplay.map((sub, idx) => {
-    const subjectChapters = chapters?.filter(c => c.subject_id === sub.id) || [];
+  const subjectsProgress = mySubjects.map((sub, idx) => {
+    const subjectChapters = chapters.filter(c => c.subject_id === sub.id);
     const totalChapters = subjectChapters.length;
-    
-    // Using any for the inner join due to supabase typing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const completedChapters = progress?.filter(p => (p.chapters as any)?.subject_id === sub.id).length || 0;
+    const completedChapters = progress.filter(p => (p.chapters as any)?.subject_id === sub.id).length;
     const progressPercent = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
 
     return {
@@ -132,12 +122,12 @@ export default async function DashboardPage() {
   });
 
   const stats = {
-    completedChapters: progress?.length || 0,
-    completedExercises: completedExercisesCount || 0,
-    examAttempts: examAttemptsCount || 0
+    completedChapters: progress.length,
+    completedExercises: exerciseStatsResult.count || 0,
+    examAttempts: examStatsResult.count || 0,
   };
 
-  // Fetch last accessed
+  // Fetch last accessed chapter
   const { data: lastProgress } = await supabase
     .from('chapter_progress')
     .select(`
@@ -164,7 +154,6 @@ export default async function DashboardPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const subj = chap.subjects as any;
     
-    // Also we need a content inside this chapter to link to. 
     const { data: content } = await supabase
       .from('contents')
       .select('id')
@@ -179,7 +168,6 @@ export default async function DashboardPage() {
         subjectName: subj.name,
         link: `/matieres/${subj.slug}/${chap.slug}/cours/${content.id}`,
         lastReadAt: new Date(lastProgress.last_accessed_at).toLocaleDateString('fr-FR'),
-        progress: 50 // Placeholder for now
       };
     }
   }
@@ -187,25 +175,46 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-content mx-auto px-4 md:px-8 py-8 space-y-8 pb-12">
       {/* Header */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <h1 className="font-display text-4xl text-navy-900">Bonjour, {studentName} 👋</h1>
-        <p className="text-gray-600 capitalize">{today}</p>
+        <p className="text-gray-500 capitalize">{today}</p>
       </div>
+
+      {/* No Pack Banner */}
+      {!hasActivePack && (
+        <div className="flex items-start gap-4 p-5 rounded-xl border border-amber-200 bg-amber-50">
+          <div className="p-2 bg-amber-100 rounded-lg shrink-0">
+            <Lock className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">Aucun pack actif</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Vous n'avez pas encore activé de pack d'accès. Utilisez votre code d'activation pour débloquer les matières.
+            </p>
+          </div>
+          <Link href="/activation">
+            <Button size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700">Activer un code</Button>
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Main Column */}
         <div className="md:col-span-2 space-y-8">
+
           {/* Continue Learning */}
-          {lastAccessed ? (
-            <section>
-              <h2 className="text-xl font-semibold text-navy-900 mb-4">Reprendre l'apprentissage</h2>
+          <section>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">
+              {lastAccessed ? 'Reprendre l\'apprentissage' : 'Commencer l\'apprentissage'}
+            </h2>
+            {lastAccessed ? (
               <Card className="overflow-hidden">
                 <div className="p-0">
                   <div className="flex flex-col md:flex-row border-l-4 border-gold-500">
                     <div className="p-6 flex-1">
                       <Badge variant="outline" className="mb-2 text-gold-600 border-gold-300">{lastAccessed.subjectName}</Badge>
                       <h3 className="text-lg font-medium text-navy-900 mb-2">{lastAccessed.title}</h3>
-                      <div className="flex items-center text-sm text-gray-500 mb-4">
+                      <div className="flex items-center text-sm text-gray-500">
                         <Clock className="w-4 h-4 mr-1" />
                         Dernier accès : {lastAccessed.lastReadAt}
                       </div>
@@ -220,64 +229,65 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </Card>
-            </section>
-          ) : (
-             <section>
-              <h2 className="text-xl font-semibold text-navy-900 mb-4">Commencer l'apprentissage</h2>
+            ) : (
               <Card className="p-8 text-center text-gray-500">
                 <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p>Vous n'avez pas encore commencé de chapitre.</p>
-                <Link href="/matieres">
-                  <Button className="mt-4">Explorer les matières</Button>
-                </Link>
+                {hasActivePack && (
+                  <Link href="/matieres">
+                    <Button className="mt-4">Explorer les matières</Button>
+                  </Link>
+                )}
               </Card>
-             </section>
-          )}
+            )}
+          </section>
 
           {/* Subjects Grid */}
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-navy-900">Vos matières</h2>
-              <Link href="/matieres">
-                <Button variant="ghost" className="text-gold-600 hover:text-gold-700 hover:bg-gold-50">
-                  Voir tout
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {subjectsProgress.map(subject => (
-                <Link key={subject.id} href={`/matieres/${subject.slug}`}>
-                  <Card className="hover:shadow-card-hover transition-shadow cursor-pointer h-full">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-medium text-navy-900 line-clamp-1">{subject.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between text-sm text-gray-500 mb-2">
-                        <span>{subject.completedChapters} / {subject.totalChapters} chapitres</span>
-                        <span>{subject.progress}%</span>
-                      </div>
-                      <ProgressBar value={subject.progress} className="h-2" indicatorClassName={subject.color} />
-                    </CardContent>
-                  </Card>
+          {hasActivePack && (
+            <section>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-navy-900">Vos matières</h2>
+                <Link href="/matieres">
+                  <Button variant="ghost" className="text-gold-600 hover:text-gold-700 hover:bg-gold-50">
+                    Voir tout
+                  </Button>
                 </Link>
-              ))}
-            </div>
-          </section>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {subjectsProgress.map(subject => (
+                  <Link key={subject.id} href={`/matieres/${subject.slug}`}>
+                    <Card className="hover:shadow-card-hover transition-shadow cursor-pointer h-full">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium text-navy-900 line-clamp-1">{subject.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between text-sm text-gray-500 mb-2">
+                          <span>{subject.completedChapters} / {subject.totalChapters} chapitres</span>
+                          <span className="font-medium">{subject.progress}%</span>
+                        </div>
+                        <ProgressBar value={subject.progress} className="h-2" indicatorClassName={subject.color} />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Stats */}
           <section>
             <h2 className="text-xl font-semibold text-navy-900 mb-4">Vos statistiques</h2>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               <Card>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                    <BookOpen className="w-6 h-6" />
+                    <BookOpen className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-navy-900">{stats.completedChapters}</p>
+                    <p className="text-2xl font-bold text-navy-900">{stats.completedChapters}</p>
                     <p className="text-sm text-gray-500">Chapitres terminés</p>
                   </div>
                 </CardContent>
@@ -285,10 +295,10 @@ export default async function DashboardPage() {
               <Card>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <CheckCircle className="w-6 h-6" />
+                    <CheckCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-navy-900">{stats.completedExercises}</p>
+                    <p className="text-2xl font-bold text-navy-900">{stats.completedExercises}</p>
                     <p className="text-sm text-gray-500">Exercices réussis</p>
                   </div>
                 </CardContent>
@@ -296,14 +306,33 @@ export default async function DashboardPage() {
               <Card>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
-                    <Trophy className="w-6 h-6" />
+                    <Trophy className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold text-navy-900">{stats.examAttempts}</p>
+                    <p className="text-2xl font-bold text-navy-900">{stats.examAttempts}</p>
                     <p className="text-sm text-gray-500">Examens passés</p>
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </section>
+
+          {/* Quick Links */}
+          <section>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">Accès rapide</h2>
+            <div className="space-y-2">
+              <Link href="/progression" className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-gold-300 hover:bg-gold-50 transition-colors group">
+                <span className="text-sm font-medium text-navy-900 group-hover:text-gold-700">Ma progression</span>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gold-600" />
+              </Link>
+              <Link href="/mode-examen" className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-gold-300 hover:bg-gold-50 transition-colors group">
+                <span className="text-sm font-medium text-navy-900 group-hover:text-gold-700">Mode Examen</span>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gold-600" />
+              </Link>
+              <Link href="/profil" className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-white hover:border-gold-300 hover:bg-gold-50 transition-colors group">
+                <span className="text-sm font-medium text-navy-900 group-hover:text-gold-700">Mon profil</span>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gold-600" />
+              </Link>
             </div>
           </section>
         </div>
