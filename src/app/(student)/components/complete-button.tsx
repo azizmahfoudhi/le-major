@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Check, ChevronRight } from 'lucide-react';
 import { markContentComplete } from '../actions/progress';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface CompleteButtonProps {
   contentId: string;
@@ -19,15 +20,11 @@ export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, ti
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const handleComplete = () => {
+  const handleMarkDone = () => {
     startTransition(async () => {
       try {
         await markContentComplete(contentId, `/matieres/${slug}/${chapterSlug}`);
-        if (nextContentId) {
-          router.push(`/matieres/${slug}/${chapterSlug}/cours/${nextContentId}`);
-        } else {
-          router.push(`/matieres/${slug}/${chapterSlug}`);
-        }
+        router.refresh();
       } catch (error) {
         console.error(error);
         alert("Une erreur s'est produite lors de la sauvegarde.");
@@ -36,28 +33,46 @@ export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, ti
   };
 
   return (
-    <Button 
-      onClick={handleComplete} 
-      disabled={isPending || isCompleted} 
-      className="ml-auto"
-      variant={isCompleted ? "secondary" : "primary"}
-    >
-      {isPending ? 'Enregistrement...' : isCompleted ? (
-        <>
-          <Check className="w-4 h-4 mr-2" />
-          Déjà lu
-        </>
-      ) : nextContentId ? (
-        <>
-          {title || 'Leçon suivante'}
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </>
+    <div className="ml-auto flex items-center gap-3">
+      {/* Mark as done button — independent of navigation */}
+      {!isCompleted ? (
+        <Button
+          onClick={handleMarkDone}
+          disabled={isPending}
+          variant="outline"
+          className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+        >
+          {isPending ? (
+            'Enregistrement...'
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Marquer comme lu
+            </>
+          )}
+        </Button>
       ) : (
-        <>
-          <Check className="w-4 h-4 mr-2" />
-          Terminer le chapitre
-        </>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-md">
+          <Check className="w-4 h-4" />
+          Lu
+        </span>
       )}
-    </Button>
+
+      {/* Navigation button — just redirects, no save */}
+      {nextContentId ? (
+        <Link href={`/matieres/${slug}/${chapterSlug}/cours/${nextContentId}`}>
+          <Button variant="primary">
+            {title || 'Suivant'}
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
+      ) : (
+        <Link href={`/matieres/${slug}/${chapterSlug}`}>
+          <Button variant="outline">
+            Retour au chapitre
+          </Button>
+        </Link>
+      )}
+    </div>
   );
 }
