@@ -16,7 +16,7 @@ export default function AuthLayout({
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex justify-center">
             <Image
-              src="/logo_horizontal_navy.png"
+              src="/logo.jpg"
               alt="Le Major"
               width={200}
               height={60}

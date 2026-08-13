@@ -29,7 +29,7 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
         <div className="flex items-center justify-between h-16 px-4 border-b border-navy-800">
           <Link href="/accueil" onClick={onClose}>
             <Image
-              src="/logo_horizontal_navy.png"
+              src="/logo.jpg"
               alt="Le Major"
               width={120}
               height={36}

@@ -55,7 +55,7 @@ export default function AdminSidebar() {
           {!isCollapsed && (
             <Link href="/admin" className="flex flex-col">
               <Image
-                src="/logo_horizontal_navy.png"
+                src="/logo.jpg"
                 alt="Le Major"
                 width={120}
                 height={32}
@@ -138,7 +138,7 @@ export default function AdminSidebar() {
       <div className="md:hidden flex items-center justify-between h-16 bg-navy-950 px-4 border-b border-navy-800">
         <Link href="/admin" className="flex flex-col">
           <Image
-            src="/logo_horizontal_navy.png"
+            src="/logo.jpg"
             alt="Le Major"
             width={110}
             height={30}

@@ -19,7 +19,7 @@ export default function StudentNav() {
         <div className="flex items-center gap-8">
           <Link href="/accueil" className="flex items-center">
             <Image
-              src="/logo_horizontal_navy.png"
+              src="/logo.jpg"
               alt="Le Major"
               width={140}
               height={40}
