@@ -15,12 +15,6 @@ export default async function EtudiantsManager() {
       last_name,
       role,
       created_at,
-      universities (
-        name
-      ),
-      formations (
-        name
-      ),
       student_activations (
         id,
         is_active,
@@ -50,10 +44,10 @@ export default async function EtudiantsManager() {
     ) : (
       <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Étudiant</Badge>
     ),
-    universite: p.universities?.name || 'Non renseignée',
-    formation: p.formations?.name || 'Non renseignée',
+    universite: '—',
+    formation: '—',
     date: new Date(p.created_at).toLocaleDateString('fr-FR'),
-    _raw: p // Contains student_activations
+    _raw: p
   }));
 
   return <EtudiantsClient initialStudents={formattedProfiles} packages={packages || []} />;
