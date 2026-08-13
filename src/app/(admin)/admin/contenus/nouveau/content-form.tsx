@@ -5,7 +5,7 @@ import { Button, Input } from '@/components/ui';
 import { Save, ArrowLeft, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { createContent, updateContent } from '../../../actions/content';
-import MediaPicker from './media-picker';
+import MediaPicker from '@/components/admin/media-picker';
 
 interface Chapter {
   id: string;

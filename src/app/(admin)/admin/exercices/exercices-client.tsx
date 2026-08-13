@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus, Brain, Edit, Trash2 } from 'lucide-react';
 import { Button, Input, Badge } from '@/components/ui';
 import { DataTable } from '@/components/admin/data-table';
 import { createExercise, updateExercise, deleteExercise } from './actions';
+import MediaPicker from '@/components/admin/media-picker';
 
 type Subject = { id: string; name: string; };
 type Exam = { id: string; title: string; };
@@ -37,6 +38,9 @@ export default function ExercicesClient({
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
+  
+  const statementRef = useRef<HTMLTextAreaElement>(null);
+  const solutionRef = useRef<HTMLTextAreaElement>(null);
   
   // Nouvelles méta-données
   const [examId, setExamId] = useState('');
@@ -114,6 +118,25 @@ export default function ExercicesClient({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMediaSelect = (markdownLink: string, target: 'statement' | 'solution') => {
+    const ref = target === 'statement' ? statementRef.current : solutionRef.current;
+    if (!ref) return;
+    
+    const start = ref.selectionStart;
+    const end = ref.selectionEnd;
+    
+    const currentText = target === 'statement' ? statement : solution;
+    const newContent = currentText.substring(0, start) + markdownLink + currentText.substring(end);
+    
+    if (target === 'statement') setStatement(newContent);
+    else setSolution(newContent);
+    
+    setTimeout(() => {
+      ref.focus();
+      ref.setSelectionRange(start + markdownLink.length, start + markdownLink.length);
+    }, 0);
   };
 
   return (
@@ -265,8 +288,12 @@ export default function ExercicesClient({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Énoncé (Markdown / LaTeX)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Énoncé (Markdown / KaTeX)</label>
+                  <MediaPicker onSelect={(link) => handleMediaSelect(link, 'statement')} />
+                </div>
                 <textarea 
+                  ref={statementRef}
                   className="w-full flex min-h-[120px] rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm font-mono shadow-sm"
                   value={statement} 
                   onChange={e => setStatement(e.target.value)} 
@@ -275,8 +302,12 @@ export default function ExercicesClient({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Correction détaillée (Markdown / LaTeX)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Correction détaillée (Markdown / KaTeX)</label>
+                  <MediaPicker onSelect={(link) => handleMediaSelect(link, 'solution')} />
+                </div>
                 <textarea 
+                  ref={solutionRef}
                   className="w-full flex min-h-[120px] rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm font-mono shadow-sm"
                   value={solution} 
                   onChange={e => setSolution(e.target.value)} 
