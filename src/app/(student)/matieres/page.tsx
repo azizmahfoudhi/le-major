@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import Link from 'next/link';
-import { Book } from 'lucide-react';
+import { Book, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -38,6 +38,30 @@ export default async function SubjectsPage() {
     .eq('student_id', user.id)
     .eq('is_completed', true);
 
+  // Determine which subjects the user has access to
+  const { data: activations } = await supabase
+    .from('student_activations')
+    .select(`
+      packages (
+        package_subjects (
+          subjects (id)
+        )
+      )
+    `)
+    .eq('student_id', user.id)
+    .eq('is_active', true);
+
+  const unlockedSubjectIds = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  activations?.forEach((act: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    act.packages?.package_subjects?.forEach((ps: any) => {
+      if (ps.subjects) {
+        unlockedSubjectIds.add(ps.subjects.id);
+      }
+    });
+  });
+
   const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-indigo-500', 'bg-rose-500'];
 
   const subjects = (subjectsData || []).map((sub, idx) => {
@@ -49,13 +73,16 @@ export default async function SubjectsPage() {
     const completedChapters = progressData?.filter(p => (p.chapters as any)?.subject_id === sub.id).length || 0;
     const progressPercent = totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
 
+    const isUnlocked = unlockedSubjectIds.has(sub.id);
+
     return {
       id: sub.id,
       name: sub.name,
       slug: sub.slug,
       totalChapters,
       progress: progressPercent,
-      colorClass: colors[idx % colors.length]
+      colorClass: colors[idx % colors.length],
+      isUnlocked
     };
   });
 
@@ -76,11 +103,17 @@ export default async function SubjectsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {subjects.map((subject) => (
             <Link key={subject.id} href={`/matieres/${subject.slug}`}>
-              <Card className="rounded-card border border-gray-100 bg-white shadow-sm hover:shadow-card transition-all cursor-pointer h-full group">
+              <Card className={`rounded-card border border-gray-100 bg-white shadow-sm transition-all h-full group ${subject.isUnlocked ? 'hover:shadow-card cursor-pointer' : 'opacity-80 cursor-pointer hover:border-gray-200'}`}>
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-xl font-medium text-navy-900 group-hover:text-gold-600 transition-colors">{subject.name}</CardTitle>
-                    <div className={`w-3 h-3 rounded-full ${subject.colorClass}`} />
+                    <CardTitle className={`text-xl font-medium transition-colors ${subject.isUnlocked ? 'text-navy-900 group-hover:text-gold-600' : 'text-gray-600'}`}>
+                      {subject.name}
+                    </CardTitle>
+                    {subject.isUnlocked ? (
+                      <div className={`w-3 h-3 rounded-full ${subject.colorClass}`} />
+                    ) : (
+                      <Lock className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -93,7 +126,7 @@ export default async function SubjectsPage() {
                     <ProgressBar 
                       value={subject.progress} 
                       className="h-2" 
-                      indicatorClassName={subject.colorClass} 
+                      indicatorClassName={subject.isUnlocked ? subject.colorClass : 'bg-gray-300'} 
                     />
                   </div>
                 </CardContent>

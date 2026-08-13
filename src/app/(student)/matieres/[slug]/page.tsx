@@ -81,11 +81,11 @@ export default async function SubjectDetailPage({
     };
   });
 
-  // Fetch real exercises for this subject
+  // Fetch real exercises for this subject (through chapters)
   const { data: exercisesData } = await supabase
     .from('exercises')
-    .select('id, title, difficulty, exams(title)')
-    .eq('subject_id', subject.id)
+    .select('id, title, difficulty, chapters!inner(subject_id), exams(title)')
+    .eq('chapters.subject_id', subject.id)
     .order('title');
 
   // Fetch real exams for this subject
