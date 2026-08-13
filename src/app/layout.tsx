@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import { Toaster } from 'sonner';
+import 'katex/dist/katex.min.css';
 import './globals.css';
 
 const inter = Inter({
