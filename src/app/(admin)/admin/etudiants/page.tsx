@@ -11,7 +11,8 @@ export default async function EtudiantsManager() {
     .from('profiles')
     .select(`
       id,
-      full_name,
+      first_name,
+      last_name,
       role,
       created_at,
       universities (
@@ -43,7 +44,7 @@ export default async function EtudiantsManager() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formattedProfiles = (profiles || []).map((p: any) => ({
     id: p.id,
-    nom: p.full_name || 'Utilisateur sans nom',
+    nom: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Utilisateur sans nom',
     role: p.role === 'admin' ? (
       <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">Admin</Badge>
     ) : (
