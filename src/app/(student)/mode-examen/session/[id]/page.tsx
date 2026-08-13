@@ -43,7 +43,7 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
         id,
         theme,
         points,
-        statement_body
+        statement
       )
     `)
     .eq('attempt_id', attemptId)
@@ -64,7 +64,7 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
       number: index + 1,
       theme: ex.theme || 'Exercice',
       points: ex.points || 5,
-      statement: ex.statement_body || ''
+      statement: ex.statement || ''
     };
   }) || [];
 

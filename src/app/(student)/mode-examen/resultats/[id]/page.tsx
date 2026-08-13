@@ -77,8 +77,8 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
         id,
         theme,
         points,
-        statement_body,
-        solution_body
+        statement,
+        solution
       )
     `)
     .eq('attempt_id', attemptId)
@@ -92,8 +92,8 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
       number: index + 1,
       theme: ex.theme || 'Exercice',
       points: ex.points || 5,
-      statement: ex.statement_body || '',
-      solution: ex.solution_body || ''
+      statement: ex.statement || '',
+      solution: ex.solution || ''
     };
   }) || [];
 

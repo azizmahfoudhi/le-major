@@ -24,8 +24,8 @@ export async function generateCustomExam(formData: FormData) {
   // Build the query to fetch exercises
   let query = supabase
     .from('exercises')
-    .select('id, duration_minutes, points')
-    .eq('subject_id', subjectId);
+    .select('id, duration_minutes, points, chapters!inner(subject_id)')
+    .eq('chapters.subject_id', subjectId);
 
   if (difficulty !== 'all') {
     query = query.eq('difficulty', difficulty);
