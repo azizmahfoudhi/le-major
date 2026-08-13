@@ -23,7 +23,7 @@ export default async function ProgressPage() {
     .from('exam_attempts')
     .select('score')
     .eq('student_id', user.id)
-    .eq('status', 'completed')
+    .in('status', ['completed', 'evaluated'])
     .not('score', 'is', null);
 
   let averageScore = 0;

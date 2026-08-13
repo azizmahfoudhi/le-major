@@ -64,19 +64,22 @@ export default async function ChapterPage({
     .eq('chapter_id', chapter.id)
     .order('order_index', { ascending: true });
 
-  // 5. Fetch lesson progress
-  const { data: contentProgress } = await supabase
-    .from('content_progress')
-    .select('content_id, is_completed')
-    .eq('student_id', user.id);
+  // 5. We don't track individual lesson progress in this schema, only chapter progress.
+  // We can fetch if the chapter is completed to mark lessons as read.
+  const { data: chapterProgress } = await supabase
+    .from('chapter_progress')
+    .select('is_completed')
+    .eq('student_id', user.id)
+    .eq('chapter_id', chapter.id)
+    .single();
 
-  const completedContents = new Set(contentProgress?.filter(p => p.is_completed).map(p => p.content_id));
+  const isChapterCompleted = chapterProgress?.is_completed || false;
 
   const lessons = (lessonsData || []).map(lesson => ({
     id: lesson.id,
     title: lesson.title,
     slug: lesson.slug,
-    read: completedContents.has(lesson.id)
+    read: isChapterCompleted
   }));
 
   // 6. Fetch related exercises
