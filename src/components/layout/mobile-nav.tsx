@@ -31,9 +31,9 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
             <Image
               src="/logo.jpg"
               alt="Le Major"
-              width={120}
-              height={36}
-              className="h-8 w-auto object-contain invert mix-blend-screen"
+              width={160}
+              height={48}
+              className="h-11 w-auto object-contain invert mix-blend-screen"
             />
           </Link>
           <button 

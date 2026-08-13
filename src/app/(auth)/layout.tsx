@@ -18,9 +18,9 @@ export default function AuthLayout({
             <Image
               src="/logo.jpg"
               alt="Le Major"
-              width={200}
-              height={60}
-              className="h-14 w-auto object-contain invert mix-blend-screen"
+              width={280}
+              height={84}
+              className="h-20 w-auto object-contain invert mix-blend-screen"
               priority
             />
           </Link>

@@ -57,9 +57,9 @@ export default function AdminSidebar() {
               <Image
                 src="/logo.jpg"
                 alt="Le Major"
-                width={120}
-                height={32}
-                className="h-8 w-auto object-contain invert mix-blend-screen"
+                width={160}
+                height={44}
+                className="h-11 w-auto object-contain invert mix-blend-screen"
                 priority
               />
               <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
@@ -140,9 +140,9 @@ export default function AdminSidebar() {
           <Image
             src="/logo.jpg"
             alt="Le Major"
-            width={110}
-            height={30}
-            className="h-7 w-auto object-contain invert mix-blend-screen"
+            width={150}
+            height={40}
+            className="h-10 w-auto object-contain invert mix-blend-screen"
           />
           <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
         </Link>
