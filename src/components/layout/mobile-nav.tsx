@@ -4,7 +4,7 @@ import { X, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
-import Image from 'next/image';
+import Logo from '@/components/ui/logo';
 import { signOut } from '@/app/(auth)/signout/actions';
 
 interface MobileNavProps {
@@ -28,13 +28,7 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
       <div className="relative w-64 max-w-xs flex flex-col bg-navy-900 border-r border-navy-800 shadow-xl h-full animate-slide-right">
         <div className="flex items-center justify-between h-16 px-4 border-b border-navy-800">
           <Link href="/accueil" onClick={onClose}>
-            <Image
-              src="/logo.jpg"
-              alt="Le Major"
-              width={160}
-              height={48}
-              className="h-11 w-auto object-contain invert mix-blend-screen"
-            />
+            <Logo variant="light" className="h-11 w-auto" />
           </Link>
           <button 
             onClick={onClose}

@@ -21,7 +21,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useState } from 'react';
-import Image from 'next/image';
+import Logo from '@/components/ui/logo';
 import { signOut } from '@/app/(auth)/signout/actions';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -54,26 +54,13 @@ export default function AdminSidebar() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-navy-800">
           {!isCollapsed && (
             <Link href="/admin" className="flex flex-col">
-              <Image
-                src="/logo.jpg"
-                alt="Le Major"
-                width={160}
-                height={44}
-                className="h-11 w-auto object-contain invert mix-blend-screen"
-                priority
-              />
+              <Logo variant="light" className="h-11 w-auto" />
               <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
             </Link>
           )}
           {isCollapsed && (
             <Link href="/admin" className="mx-auto">
-              <Image
-                src="/app_icon.png"
-                alt="LM"
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain rounded"
-              />
+              <Logo variant="light" showText={false} className="h-8 w-8" />
             </Link>
           )}
           <button 
@@ -137,13 +124,7 @@ export default function AdminSidebar() {
       {/* Mobile top bar for admin */}
       <div className="md:hidden flex items-center justify-between h-16 bg-navy-950 px-4 border-b border-navy-800">
         <Link href="/admin" className="flex flex-col">
-          <Image
-            src="/logo.jpg"
-            alt="Le Major"
-            width={150}
-            height={40}
-            className="h-10 w-auto object-contain invert mix-blend-screen"
-          />
+          <Logo variant="light" className="h-10 w-auto" />
           <span className="text-xs font-medium text-navy-400 tracking-wider mt-0.5">ADMIN</span>
         </Link>
         <form action={signOut}>

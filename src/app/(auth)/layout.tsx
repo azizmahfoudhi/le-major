@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import Logo from '@/components/ui/logo';
 
 export default function AuthLayout({
   children,
@@ -15,14 +15,7 @@ export default function AuthLayout({
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex justify-center">
-            <Image
-              src="/logo.jpg"
-              alt="Le Major"
-              width={280}
-              height={84}
-              className="h-20 w-auto object-contain invert mix-blend-screen"
-              priority
-            />
+            <Logo variant="light" className="h-20 w-auto" />
           </Link>
           <p className="text-navy-200 mt-4 text-sm font-medium">L'excellence académique</p>
         </div>
