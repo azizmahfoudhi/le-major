@@ -3,25 +3,26 @@
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight } from 'lucide-react';
-import { markChapterComplete } from '../actions/progress';
+import { markContentComplete } from '../actions/progress';
 import { useRouter } from 'next/navigation';
 
 interface CompleteButtonProps {
-  chapterId: string;
+  contentId: string;
   nextContentId?: string | null;
   slug: string;
   chapterSlug: string;
   title?: string;
+  isCompleted?: boolean;
 }
 
-export function CompleteButton({ chapterId, nextContentId, slug, chapterSlug, title }: CompleteButtonProps) {
+export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, title, isCompleted }: CompleteButtonProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const handleComplete = () => {
     startTransition(async () => {
       try {
-        await markChapterComplete(chapterId, `/matieres/${slug}/${chapterSlug}`);
+        await markContentComplete(contentId, `/matieres/${slug}/${chapterSlug}`);
         if (nextContentId) {
           router.push(`/matieres/${slug}/${chapterSlug}/cours/${nextContentId}`);
         } else {
@@ -35,8 +36,18 @@ export function CompleteButton({ chapterId, nextContentId, slug, chapterSlug, ti
   };
 
   return (
-    <Button onClick={handleComplete} disabled={isPending} className="ml-auto">
-      {isPending ? 'Enregistrement...' : nextContentId ? (
+    <Button 
+      onClick={handleComplete} 
+      disabled={isPending || isCompleted} 
+      className="ml-auto"
+      variant={isCompleted ? "secondary" : "primary"}
+    >
+      {isPending ? 'Enregistrement...' : isCompleted ? (
+        <>
+          <Check className="w-4 h-4 mr-2" />
+          Déjà lu
+        </>
+      ) : nextContentId ? (
         <>
           {title || 'Leçon suivante'}
           <ChevronRight className="w-4 h-4 ml-2" />

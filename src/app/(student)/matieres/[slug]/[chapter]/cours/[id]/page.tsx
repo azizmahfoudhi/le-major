@@ -81,6 +81,16 @@ export default async function LessonReaderPage({
   const prevContent = currentIndex > 0 ? siblings[currentIndex - 1] : null;
   const nextContent = currentIndex !== -1 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
+  // Fetch current read status
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: progress } = await supabase
+    .from('content_progress')
+    .select('is_completed')
+    .eq('student_id', user?.id)
+    .eq('content_id', id)
+    .single();
+  const isCompleted = progress?.is_completed || false;
+
   return (
     <div className="max-w-content mx-auto px-4 md:px-8 py-8 flex flex-col lg:flex-row gap-8 pb-12">
       {/* Main Content Area */}
@@ -125,7 +135,8 @@ export default async function LessonReaderPage({
           )}
           
           <CompleteButton 
-            chapterId={content.chapter_id} 
+            contentId={content.id}
+            isCompleted={isCompleted}
             nextContentId={nextContent?.id} 
             slug={slug} 
             chapterSlug={chapter}
