@@ -177,7 +177,7 @@ export default async function SubjectDetailPage({
           </TabsContent>
 
           <TabsContent value="pratiquer" className="m-0 space-y-4">
-            <h2 className="text-xl font-semibold text-navy-900 mb-4">Exercices et Séries</h2>
+            <h2 className="text-xl font-semibold text-navy-900 mb-4">Exercices</h2>
             {exercises.length === 0 ? (
               <p className="text-gray-500 italic">Aucun exercice disponible pour le moment.</p>
             ) : (

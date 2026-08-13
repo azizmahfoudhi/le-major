@@ -35,7 +35,6 @@ export const ROUTES = {
   adminContenuModifier: (id: string) => `/admin/contenus/${id}/modifier`,
   adminRessources: '/admin/ressources',
   adminExercices: '/admin/exercices',
-  adminSeries: '/admin/series',
   adminExamens: '/admin/examens',
   adminPacks: '/admin/packs',
   adminCodes: '/admin/codes',
@@ -57,7 +56,6 @@ export const ADMIN_NAV = [
     { label: 'Structure', href: ROUTES.adminStructure, icon: 'Building2' },
     { label: 'Contenus', href: ROUTES.adminContenus, icon: 'FileText' },
     { label: 'Exercices', href: ROUTES.adminExercices, icon: 'PenTool' },
-    { label: 'Séries', href: ROUTES.adminSeries, icon: 'Layers' },
     { label: 'Examens', href: ROUTES.adminExamens, icon: 'ClipboardList' },
   ]},
   { section: 'Accès', items: [
