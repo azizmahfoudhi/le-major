@@ -45,3 +45,10 @@ export async function generateCodes(packageId: string, quantity: number) {
   revalidatePath('/admin/codes');
   return { success: true };
 }
+
+export async function deleteCode(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('activation_codes').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/codes');
+}
