@@ -81,12 +81,17 @@ export default async function SubjectDetailPage({
     };
   });
 
-  // Fetch real exercises for this subject (through chapters)
-  const { data: exercisesData } = await supabase
+  // Fetch real exercises for this subject
+  const { data: exercisesData, error: exercisesError } = await supabase
     .from('exercises')
-    .select('id, title, difficulty, chapters!inner(subject_id), exams(title)')
-    .eq('chapters.subject_id', subject.id)
+    .select('id, title, difficulty, subject_id, exams(title)')
+    .eq('subject_id', subject.id)
+    .eq('status', 'published')
     .order('title');
+
+  if (exercisesError) {
+    console.error('Error fetching exercises on student page:', exercisesError.message);
+  }
 
   // Fetch real exams for this subject
   const { data: examsData } = await supabase
