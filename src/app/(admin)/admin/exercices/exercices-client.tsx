@@ -120,8 +120,8 @@ export default function ExercicesClient({
         await createExercise(payload);
       }
       setIsModalOpen(false);
-    } catch {
-      alert('Une erreur est survenue.');
+    } catch (err) {
+      alert(`Erreur : ${err instanceof Error ? err.message : 'Inconnue'}`);
     } finally {
       setLoading(false);
     }

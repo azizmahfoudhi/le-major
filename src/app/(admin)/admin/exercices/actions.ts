@@ -18,7 +18,6 @@ export async function createExercise(data: {
   const { error } = await supabase.from('exercises').insert({
     title: data.title,
     difficulty: data.difficulty,
-    is_free: false,
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,
@@ -47,7 +46,6 @@ export async function updateExercise(id: string, data: {
   const { error } = await supabase.from('exercises').update({
     title: data.title,
     difficulty: data.difficulty,
-    is_free: false,
     subject_id: data.subject_id,
     statement_body: data.statement_body,
     solution_body: data.solution_body,
