@@ -88,7 +88,9 @@ export default async function ChapterPage({
   const { data: exercisesData } = await supabase
     .from('exercises')
     .select('id, title, difficulty')
-    .eq('chapter_id', chapter.id)
+    .eq('subject_id', subject.id)
+    .ilike('theme', `%${chapter.title}%`)
+    .eq('status', 'published')
     .order('created_at', { ascending: true });
 
   const relatedExercises = exercisesData || [];
