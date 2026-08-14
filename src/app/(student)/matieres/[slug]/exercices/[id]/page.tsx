@@ -29,11 +29,10 @@ export default async function ExercisePage({
       title,
       difficulty,
       subject_id,
+      exam_id,
+      theme,
       statement_body,
-      solution_body,
-      exams (
-        title
-      )
+      solution_body
     `)
     .eq('id', id)
     .single();
@@ -43,16 +42,22 @@ export default async function ExercisePage({
   }
 
   // Look up subject separately to avoid PostgREST FK cache issues
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: subject } = (exercise as any).subject_id
+  const { data: subject } = exercise.subject_id
     ? await supabase
         .from('subjects')
         .select('name, slug')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .eq('id', (exercise as any).subject_id)
+        .eq('id', exercise.subject_id)
         .single()
     : { data: null };
 
+  // Look up exam title separately
+  const { data: examData } = exercise.exam_id
+    ? await supabase
+        .from('exams')
+        .select('title')
+        .eq('id', exercise.exam_id)
+        .single()
+    : { data: null };
 
   const mdxOptions = {
     mdxOptions: {
@@ -71,18 +76,21 @@ export default async function ExercisePage({
       </Link>
 
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="text-xs font-semibold text-gold-600 bg-gold-50 px-3 py-1 rounded-full uppercase tracking-wider">
             Exercice
           </span>
           <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-wider">
             {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Intermédiaire' : 'Difficile'}
           </span>
-          {/* @ts-expect-error Types Supabase */}
-          {exercise.exams?.title && (
+          {examData?.title && (
             <span className="text-xs font-semibold text-navy-600 bg-navy-50 px-3 py-1 rounded-full uppercase tracking-wider border border-navy-100">
-              {/* @ts-expect-error Types Supabase */}
-              Source: {exercise.exams.title}
+              {examData.title}
+            </span>
+          )}
+          {exercise.theme && (
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              {exercise.theme}
             </span>
           )}
         </div>

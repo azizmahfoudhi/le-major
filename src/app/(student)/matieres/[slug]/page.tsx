@@ -84,13 +84,30 @@ export default async function SubjectDetailPage({
   // Fetch real exercises for this subject
   const { data: exercisesData, error: exercisesError } = await supabase
     .from('exercises')
-    .select('id, title, difficulty, subject_id')
+    .select('id, title, difficulty, subject_id, exam_id, theme')
     .eq('subject_id', subject.id)
     .order('title');
 
   if (exercisesError) {
     console.error('Error fetching exercises on student page:', exercisesError.message);
   }
+
+  // Manually fetch exam titles to avoid FK join cache issues in production
+  const examIds = [...new Set((exercisesData || []).map(e => e.exam_id).filter(Boolean))];
+  let examTitleMap: Record<string, string> = {};
+  if (examIds.length > 0) {
+    const { data: examTitles } = await supabase
+      .from('exams')
+      .select('id, title')
+      .in('id', examIds);
+    examTitleMap = Object.fromEntries((examTitles || []).map(e => [e.id, e.title]));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const exercises = (exercisesData || []).map((ex: any) => ({
+    ...ex,
+    examTitle: ex.exam_id ? (examTitleMap[ex.exam_id] || null) : null,
+  }));
 
   // Fetch real exams for this subject
   const { data: examsData } = await supabase
@@ -100,7 +117,6 @@ export default async function SubjectDetailPage({
     .eq('status', 'published')
     .order('created_at', { ascending: false });
 
-  const exercises = exercisesData || [];
   const exams = examsData || [];
 
   return (
@@ -197,12 +213,15 @@ export default async function SubjectDetailPage({
                           <h3 className="text-lg font-medium text-navy-900 group-hover:text-gold-600 transition-colors">
                             {exercise.title}
                           </h3>
-                          {/* @ts-expect-error Types Supabase */}
-                          {exercise.exams?.title && (
-                            <p className="text-xs text-slate-500 mt-1 flex items-center">
-                              <BookOpen className="w-3 h-3 mr-1" />
-                              {/* @ts-expect-error Types Supabase */}
-                              Source : {exercise.exams.title}
+                          {exercise.examTitle && (
+                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              {exercise.examTitle}
+                            </p>
+                          )}
+                          {exercise.theme && (
+                            <p className="text-xs text-gold-600 mt-1">
+                              {exercise.theme}
                             </p>
                           )}
                         </div>

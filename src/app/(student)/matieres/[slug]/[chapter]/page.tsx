@@ -87,7 +87,7 @@ export default async function ChapterPage({
   // 6. Fetch related exercises
   const { data: exercisesData } = await supabase
     .from('exercises')
-    .select('id, title, difficulty')
+    .select('id, title, difficulty, theme')
     .eq('subject_id', subject.id)
     .ilike('theme', `%${chapter.title}%`)
     .or('status.eq.published,status.is.null')
@@ -166,13 +166,16 @@ export default async function ChapterPage({
               relatedExercises.map((exercise) => (
                 <Link key={exercise.id} href={`/matieres/${subject.slug}/exercices/${exercise.id}`}>
                   <Card className="hover:shadow-card-hover transition-shadow cursor-pointer">
-                    <CardContent className="p-4">
-                      <Badge variant="outline" className="mb-2 text-emerald-600 border-emerald-200 bg-emerald-50">
-                        {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
-                      </Badge>
-                      <h3 className="font-medium text-navy-900 text-sm">{exercise.title}</h3>
-                    </CardContent>
-                  </Card>
+                      <CardContent className="p-4">
+                        <Badge variant="outline" className="mb-2 text-emerald-600 border-emerald-200 bg-emerald-50">
+                          {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
+                        </Badge>
+                        <h3 className="font-medium text-navy-900 text-sm">{exercise.title}</h3>
+                        {exercise.theme && (
+                          <p className="text-xs text-gold-600 mt-1">{exercise.theme}</p>
+                        )}
+                      </CardContent>
+                    </Card>
                 </Link>
               ))
             )}
