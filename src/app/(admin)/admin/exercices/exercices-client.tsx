@@ -235,18 +235,22 @@ export default function ExercicesClient({
                   </select>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Thème (Chapitre)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thème (Chapitres)</label>
                   <select
-                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
-                    value={theme}
-                    onChange={e => setTheme(e.target.value)}
+                    multiple
+                    className="w-full h-24 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={theme ? theme.split(', ') : []}
+                    onChange={e => {
+                      const selectedOptions = Array.from(e.target.selectedOptions).map(opt => opt.value);
+                      setTheme(selectedOptions.join(', '));
+                    }}
                     disabled={filteredChapters.length === 0}
                   >
-                    <option value="">{filteredChapters.length === 0 ? 'Sélectionnez d\'abord une matière' : 'Tous les chapitres...'}</option>
                     {filteredChapters.map(c => (
-                      <option key={c.id} value={c.title}>{c.title}</option>
+                      <option key={c.id} value={c.title} className="p-1">{c.title}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-400 mt-1">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs chapitres.</p>
                 </div>
               </div>
 
