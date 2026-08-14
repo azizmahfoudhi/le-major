@@ -84,9 +84,8 @@ export default async function SubjectDetailPage({
   // Fetch real exercises for this subject
   const { data: exercisesData, error: exercisesError } = await supabase
     .from('exercises')
-    .select('id, title, difficulty, subject_id, exams(title)')
+    .select('id, title, difficulty, subject_id')
     .eq('subject_id', subject.id)
-    .or('status.eq.published,status.is.null')
     .order('title');
 
   if (exercisesError) {
