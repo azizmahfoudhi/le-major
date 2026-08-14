@@ -15,6 +15,8 @@ type Exercise = {
   id: string;
   titre: string;
   matiere: string;
+  examen: string;
+  theme: string;
   difficulte: React.ReactNode;
   _raw: Record<string, unknown>;
 };
@@ -56,6 +58,8 @@ export default function ExercicesClient({
   const columns = [
     { accessorKey: 'titre', header: 'Titre' },
     { accessorKey: 'matiere', header: 'Matière' },
+    { accessorKey: 'examen', header: 'Examen Source' },
+    { accessorKey: 'theme', header: 'Thèmes' },
     { accessorKey: 'difficulte', header: 'Difficulté' }
   ];
 

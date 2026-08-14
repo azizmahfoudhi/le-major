@@ -62,6 +62,8 @@ export default async function ExercicesManager() {
     id: ex.id,
     titre: ex.title,
     matiere: ex.subject_id ? (subjectMap[ex.subject_id] || 'Inconnue') : 'Inconnue',
+    examen: ex.exams?.title || '-',
+    theme: ex.theme || '-',
     difficulte: getDifficultyBadge(ex.difficulty),
     _raw: ex
   }));
