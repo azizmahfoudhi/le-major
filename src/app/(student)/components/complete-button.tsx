@@ -2,8 +2,8 @@
 
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronRight } from 'lucide-react';
-import { markContentComplete } from '../actions/progress';
+import { Check, ChevronRight, RotateCcw } from 'lucide-react';
+import { toggleContentComplete } from '../actions/progress';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,10 +20,10 @@ export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, ti
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const handleMarkDone = () => {
+  const handleToggle = () => {
     startTransition(async () => {
       try {
-        await markContentComplete(contentId, `/matieres/${slug}/${chapterSlug}`);
+        await toggleContentComplete(contentId, !!isCompleted);
         router.refresh();
       } catch (error) {
         console.error(error);
@@ -34,10 +34,28 @@ export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, ti
 
   return (
     <div className="ml-auto flex items-center gap-3">
-      {/* Mark as done button — independent of navigation */}
-      {!isCompleted ? (
+      {/* Toggle done button */}
+      {isCompleted ? (
         <Button
-          onClick={handleMarkDone}
+          onClick={handleToggle}
+          disabled={isPending}
+          variant="secondary"
+          className="text-gray-500 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-colors group"
+        >
+          {isPending ? (
+            'Mise à jour...'
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-2 text-emerald-500 group-hover:hidden" />
+              <RotateCcw className="w-4 h-4 mr-2 hidden group-hover:block text-rose-500" />
+              <span className="group-hover:hidden">Lu</span>
+              <span className="hidden group-hover:inline">Marquer non lu</span>
+            </>
+          )}
+        </Button>
+      ) : (
+        <Button
+          onClick={handleToggle}
           disabled={isPending}
           variant="outline"
           className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
@@ -51,11 +69,6 @@ export function CompleteButton({ contentId, nextContentId, slug, chapterSlug, ti
             </>
           )}
         </Button>
-      ) : (
-        <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-md">
-          <Check className="w-4 h-4" />
-          Lu
-        </span>
       )}
 
       {/* Navigation button — just redirects, no save */}
