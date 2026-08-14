@@ -15,7 +15,7 @@ export default async function ExercicesManager() {
   // Fetch exams for the source dropdown
   const { data: examsData } = await supabase
     .from('exams')
-    .select('id, title')
+    .select('id, title, subject_id')
     .order('title');
 
   // Fetch chapters to populate the theme dropdown per subject

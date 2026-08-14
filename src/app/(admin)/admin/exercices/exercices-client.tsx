@@ -8,7 +8,7 @@ import { createExercise, updateExercise, deleteExercise } from './actions';
 import MediaPicker from '@/components/admin/media-picker';
 
 type Subject = { id: string; name: string; };
-type Exam = { id: string; title: string; };
+type Exam = { id: string; title: string; subject_id: string; };
 type Chapter = { id: string; title: string; subject_id: string; };
 
 type Exercise = {
@@ -38,8 +38,9 @@ export default function ExercicesClient({
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
-  // chapters filtered by selected subject
+  // chapters and exams filtered by selected subject
   const filteredChapters = chapters.filter(c => c.subject_id === subjectId);
+  const filteredExams = exams.filter(e => e.subject_id === subjectId);
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
   
@@ -72,10 +73,11 @@ export default function ExercicesClient({
     setIsModalOpen(true);
   };
 
-  // When subject changes, reset theme if it no longer belongs to the new subject
+  // When subject changes, reset theme and exam if they no longer belong to the new subject
   const handleSubjectChange = (newSubjectId: string) => {
     setSubjectId(newSubjectId);
     setTheme('');
+    setExamId('');
   };
 
   const handleOpenEdit = (ex: Exercise) => {
@@ -234,12 +236,19 @@ export default function ExercicesClient({
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Examen Source (Optionnel)</label>
                   <select 
-                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     value={examId}
                     onChange={e => setExamId(e.target.value)}
+                    disabled={!subjectId || filteredExams.length === 0}
                   >
-                    <option value="">Aucun examen source...</option>
-                    {exams.map(e => (
+                    <option value="">
+                      {!subjectId 
+                        ? 'Sélectionnez d\'abord une matière...' 
+                        : filteredExams.length === 0 
+                          ? 'Aucun examen pour cette matière...' 
+                          : 'Aucun examen source...'}
+                    </option>
+                    {filteredExams.map(e => (
                       <option key={e.id} value={e.id}>{e.title}</option>
                     ))}
                   </select>
