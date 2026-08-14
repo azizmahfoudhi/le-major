@@ -27,8 +27,11 @@ export async function createExercise(data: {
     duration_minutes: data.duration_minutes || null,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { success: false, error: error.message };
+  }
   revalidatePath('/admin/exercices');
+  return { success: true };
 }
 
 export async function updateExercise(id: string, data: { 
@@ -55,14 +58,21 @@ export async function updateExercise(id: string, data: {
     duration_minutes: data.duration_minutes || null,
   }).eq('id', id);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { success: false, error: error.message };
+  }
   revalidatePath('/admin/exercices');
+  return { success: true };
 }
 
 export async function deleteExercise(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from('exercises').delete().eq('id', id);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { success: false, error: error.message };
+  }
   revalidatePath('/admin/exercices');
+  return { success: true };
 }
+

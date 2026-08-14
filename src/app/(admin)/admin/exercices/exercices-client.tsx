@@ -94,7 +94,10 @@ export default function ExercicesClient({
 
   const handleDelete = async (id: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet exercice ?')) {
-      await deleteExercise(id);
+      const result = await deleteExercise(id);
+      if (result && !result.success) {
+        alert(`Erreur Supabase : ${result.error}`);
+      }
     }
   };
 
@@ -114,14 +117,21 @@ export default function ExercicesClient({
         duration_minutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined
       };
       
+      let result;
       if (editingItem) {
-        await updateExercise(editingItem.id as string, payload);
+        result = await updateExercise(editingItem.id as string, payload);
       } else {
-        await createExercise(payload);
+        result = await createExercise(payload);
       }
+      
+      if (result && !result.success) {
+        alert(`Erreur Supabase : ${result.error}`);
+        return;
+      }
+
       setIsModalOpen(false);
     } catch (err) {
-      alert(`Erreur : ${err instanceof Error ? err.message : 'Inconnue'}`);
+      alert(`Erreur Inattendue : ${err instanceof Error ? err.message : 'Inconnue'}`);
     } finally {
       setLoading(false);
     }
