@@ -136,11 +136,12 @@ export async function startOfficialExam(examId: string) {
 
   if (attemptError || !attempt) throw new Error("Erreur création session");
 
-  // Fetch all exercises for this official exam
+  // Fetch all exercises for this official exam (no status filter)
   const { data: exercises } = await supabase
     .from('exercises')
     .select('id')
-    .eq('exam_id', examId);
+    .eq('exam_id', examId)
+    .order('created_at', { ascending: true });
 
   // Link them if they exist
   if (exercises && exercises.length > 0) {

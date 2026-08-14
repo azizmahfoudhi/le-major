@@ -41,32 +41,64 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
       order_index,
       exercises (
         id,
+        title,
         theme,
         points,
+        statement_body,
         statement
       )
     `)
     .eq('attempt_id', attemptId)
     .order('order_index', { ascending: true });
 
-  if (exercisesError || !attemptExercises || attemptExercises.length === 0) {
-    // If no exercises linked, maybe fallback to exam questions if it's an old format (pre-migration)
-    // but we assume migration is done and all data is proper.
-    console.error("Aucun exercice trouvé pour cette session.");
+  // If no attempt_exercises found but we have an exam_id, auto-populate from exam's exercises
+  let finalExercises = attemptExercises;
+  if ((!attemptExercises || attemptExercises.length === 0) && attempt.exam_id) {
+    const { data: examExercises } = await supabase
+      .from('exercises')
+      .select('id')
+      .eq('exam_id', attempt.exam_id)
+      .order('created_at', { ascending: true });
+
+    if (examExercises && examExercises.length > 0) {
+      const rows = examExercises.map((ex, index) => ({
+        attempt_id: attemptId,
+        exercise_id: ex.id,
+        order_index: index,
+      }));
+      await supabase.from('exam_attempt_exercises').insert(rows);
+
+      const { data: refetched } = await supabase
+        .from('exam_attempt_exercises')
+        .select(`
+          order_index,
+          exercises (
+            id,
+            title,
+            theme,
+            points,
+            statement_body,
+            statement
+          )
+        `)
+        .eq('attempt_id', attemptId)
+        .order('order_index', { ascending: true });
+      finalExercises = refetched;
+    }
   }
 
   // 3. Format questions for the client
-  const questions = attemptExercises?.map((ae, index) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ex: any = ae.exercises;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questions = (finalExercises || []).map((ae: any, index: number) => {
+    const ex = ae.exercises;
     return {
       id: ex.id,
       number: index + 1,
-      theme: ex.theme || 'Exercice',
+      theme: ex.theme || ex.title || 'Exercice',
       points: ex.points || 5,
-      statement: ex.statement || ''
+      statement: ex.statement_body || ex.statement || ''
     };
-  }) || [];
+  });
 
   return (
     <ExamClient 
