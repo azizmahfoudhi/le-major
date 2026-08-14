@@ -24,9 +24,7 @@ export default async function ExercicesManager() {
     .select('id, title, subject_id')
     .order('order_index', { ascending: true });
 
-  // Fetch exercises — use only the original base columns to avoid crashing
-  // if the migration (exercises_schema_migration.sql) hasn't been run yet.
-  // Once the migration is applied, the full select below can be used.
+
   const { data: exercises, error: exercisesError } = await supabase
     .from('exercises')
     .select(`
@@ -40,14 +38,16 @@ export default async function ExercicesManager() {
       theme,
       points,
       duration_minutes,
-      subjects ( name ),
       exams ( title )
     `)
     .order('created_at', { ascending: false });
 
   if (exercisesError) {
-    console.error('[ExercicesManager] Supabase error:', exercisesError.message);
+    console.error('Error fetching exercises:', exercisesError.message);
   }
+
+  // Manually resolve subject names from our already-fetched subjectsData
+  const subjectMap = Object.fromEntries((subjectsData || []).map(s => [s.id, s.name]));
 
   const getDifficultyBadge = (level: string) => {
     switch (level) {
@@ -61,28 +61,17 @@ export default async function ExercicesManager() {
   const formattedExercises = (exercises || []).map((ex: any) => ({
     id: ex.id,
     titre: ex.title,
-    matiere: ex.subjects?.name || 'Inconnue',
+    matiere: ex.subject_id ? (subjectMap[ex.subject_id] || 'Inconnue') : 'Inconnue',
     difficulte: getDifficultyBadge(ex.difficulty),
     _raw: ex
   }));
 
   return (
-    <>
-      {exercisesError && (
-        <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-          <strong>⚠️ Migration requise :</strong> La table <code>exercises</code> n&apos;a pas encore été mise à jour.
-          Veuillez exécuter le fichier <code>exercises_schema_migration.sql</code> dans le SQL Editor de Supabase.
-          <br/>
-          <span className="text-xs mt-1 block text-amber-600">Détail : {exercisesError.message}</span>
-        </div>
-      )}
-      <ExercicesClient 
-        initialExercises={formattedExercises} 
-        subjects={subjectsData || []} 
-        exams={examsData || []}
-        chapters={chaptersData || []}
-        migrationRequired={!!exercisesError}
-      />
-    </>
+    <ExercicesClient 
+      initialExercises={formattedExercises} 
+      subjects={subjectsData || []} 
+      exams={examsData || []}
+      chapters={chaptersData || []}
+    />
   );
 }

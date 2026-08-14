@@ -28,12 +28,9 @@ export default async function ExercisePage({
       id,
       title,
       difficulty,
+      subject_id,
       statement_body,
       solution_body,
-      subjects (
-        name,
-        slug
-      ),
       exams (
         title
       )
@@ -44,6 +41,18 @@ export default async function ExercisePage({
   if (!exercise) {
     notFound();
   }
+
+  // Look up subject separately to avoid PostgREST FK cache issues
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: subject } = (exercise as any).subject_id
+    ? await supabase
+        .from('subjects')
+        .select('name, slug')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .eq('id', (exercise as any).subject_id)
+        .single()
+    : { data: null };
+
 
   const mdxOptions = {
     mdxOptions: {
@@ -58,8 +67,7 @@ export default async function ExercisePage({
         href={`/matieres/${slug}`}
         className="inline-flex items-center text-sm font-medium text-navy-600 hover:text-navy-900 mb-8 transition-colors"
       >
-        {/* @ts-expect-error Types Supabase */}
-        Retour à {exercise.subjects?.name}
+        Retour à {subject?.name || slug}
       </Link>
 
       <div className="mb-8">
