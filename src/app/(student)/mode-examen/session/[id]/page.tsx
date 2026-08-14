@@ -34,8 +34,8 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
   // @ts-expect-error Types Supabase
   const durationMinutes = attempt.exams ? (attempt.exams as {duration_minutes: number}).duration_minutes : 120; // fallback if custom
 
-  // 2. Fetch the exercises linked to this attempt
-  const { data: attemptExercises, error: exercisesError } = await supabase
+  // 2. Fetch the exercises linked to this attempt via the junction table
+  const { data: attemptExercises } = await supabase
     .from('exam_attempt_exercises')
     .select(`
       order_index,
@@ -51,54 +51,34 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
     .eq('attempt_id', attemptId)
     .order('order_index', { ascending: true });
 
-  // If no attempt_exercises found but we have an exam_id, auto-populate from exam's exercises
-  let finalExercises = attemptExercises;
-  if ((!attemptExercises || attemptExercises.length === 0) && attempt.exam_id) {
-    const { data: examExercises } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let finalExercises: any[] = [];
+
+  if (attemptExercises && attemptExercises.length > 0) {
+    // Normal path: junction table has entries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    finalExercises = attemptExercises.map((ae: any) => ae.exercises);
+  } else if (attempt.exam_id) {
+    // Fallback: read exercises directly from the exercises table by exam_id
+    // (handles cases where exam_attempt_exercises was never populated)
+    const { data: directExercises } = await supabase
       .from('exercises')
-      .select('id')
+      .select('id, title, theme, points, statement_body, statement')
       .eq('exam_id', attempt.exam_id)
       .order('created_at', { ascending: true });
-
-    if (examExercises && examExercises.length > 0) {
-      const rows = examExercises.map((ex, index) => ({
-        attempt_id: attemptId,
-        exercise_id: ex.id,
-        order_index: index,
-      }));
-      await supabase.from('exam_attempt_exercises').insert(rows);
-
-      const { data: refetched } = await supabase
-        .from('exam_attempt_exercises')
-        .select(`
-          order_index,
-          exercises (
-            id,
-            title,
-            theme,
-            points,
-            statement_body,
-            statement
-          )
-        `)
-        .eq('attempt_id', attemptId)
-        .order('order_index', { ascending: true });
-      finalExercises = refetched;
-    }
+    finalExercises = directExercises || [];
   }
 
   // 3. Format questions for the client
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const questions = (finalExercises || []).map((ae: any, index: number) => {
-    const ex = ae.exercises;
-    return {
-      id: ex.id,
-      number: index + 1,
-      theme: ex.theme || ex.title || 'Exercice',
-      points: ex.points || 5,
-      statement: ex.statement_body || ex.statement || ''
-    };
-  });
+  const questions = finalExercises.map((ex: any, index: number) => ({
+    id: ex.id,
+    number: index + 1,
+    theme: ex.theme || ex.title || 'Exercice',
+    points: ex.points || 5,
+    statement: ex.statement_body || ex.statement || ''
+  }));
+
 
   return (
     <ExamClient 
