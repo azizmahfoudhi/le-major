@@ -18,6 +18,13 @@ export default async function ExercicesManager() {
     .select('id, title')
     .order('title');
 
+  // Fetch chapters to populate the theme dropdown per subject
+  const { data: chaptersData } = await supabase
+    .from('chapters')
+    .select('id, title, subject_id')
+    .order('order_index', { ascending: true });
+
+
   const { data: exercises } = await supabase
     .from('exercises')
     .select(`
@@ -59,6 +66,7 @@ export default async function ExercicesManager() {
       initialExercises={formattedExercises} 
       subjects={subjectsData || []} 
       exams={examsData || []}
+      chapters={chaptersData || []}
     />
   );
 }

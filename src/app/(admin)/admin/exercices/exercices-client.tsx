@@ -9,6 +9,7 @@ import MediaPicker from '@/components/admin/media-picker';
 
 type Subject = { id: string; name: string; };
 type Exam = { id: string; title: string; };
+type Chapter = { id: string; title: string; subject_id: string; };
 
 type Exercise = {
   id: string;
@@ -21,11 +22,13 @@ type Exercise = {
 export default function ExercicesClient({ 
   initialExercises, 
   subjects,
-  exams 
+  exams,
+  chapters
 }: { 
   initialExercises: Exercise[];
   subjects: Subject[];
   exams: Exam[];
+  chapters: Chapter[];
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
@@ -35,6 +38,8 @@ export default function ExercicesClient({
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
+  // chapters filtered by selected subject
+  const filteredChapters = chapters.filter(c => c.subject_id === subjectId);
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
   
@@ -65,6 +70,12 @@ export default function ExercicesClient({
     setPoints('');
     setDurationMinutes('');
     setIsModalOpen(true);
+  };
+
+  // When subject changes, reset theme if it no longer belongs to the new subject
+  const handleSubjectChange = (newSubjectId: string) => {
+    setSubjectId(newSubjectId);
+    setTheme('');
   };
 
   const handleOpenEdit = (ex: Exercise) => {
@@ -198,7 +209,7 @@ export default function ExercicesClient({
                   <select 
                     className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
                     value={subjectId}
-                    onChange={e => setSubjectId(e.target.value)}
+                    onChange={e => handleSubjectChange(e.target.value)}
                     required
                   >
                     <option value="">Sélectionner une matière...</option>
@@ -224,12 +235,18 @@ export default function ExercicesClient({
                   </select>
                 </div>
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Thème (Chapitre secondaire)</label>
-                  <Input 
-                    value={theme} 
-                    onChange={e => setTheme(e.target.value)} 
-                    placeholder="ex: Monopole, Théorie des coûts..."
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thème (Chapitre)</label>
+                  <select
+                    className="w-full h-10 rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm"
+                    value={theme}
+                    onChange={e => setTheme(e.target.value)}
+                    disabled={filteredChapters.length === 0}
+                  >
+                    <option value="">{filteredChapters.length === 0 ? 'Sélectionnez d\'abord une matière' : 'Tous les chapitres...'}</option>
+                    {filteredChapters.map(c => (
+                      <option key={c.id} value={c.title}>{c.title}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
