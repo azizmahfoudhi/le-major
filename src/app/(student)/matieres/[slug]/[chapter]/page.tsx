@@ -90,7 +90,7 @@ export default async function ChapterPage({
     .select('id, title, difficulty')
     .eq('subject_id', subject.id)
     .ilike('theme', `%${chapter.title}%`)
-    .eq('status', 'published')
+    .or('status.eq.published,status.is.null')
     .order('created_at', { ascending: true });
 
   const relatedExercises = exercisesData || [];

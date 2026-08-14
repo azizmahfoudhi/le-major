@@ -86,7 +86,7 @@ export default async function SubjectDetailPage({
     .from('exercises')
     .select('id, title, difficulty, subject_id, exams(title)')
     .eq('subject_id', subject.id)
-    .eq('status', 'published')
+    .or('status.eq.published,status.is.null')
     .order('title');
 
   if (exercisesError) {

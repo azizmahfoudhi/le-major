@@ -58,7 +58,7 @@ export default async function ExamPage({
       points
     `)
     .eq('exam_id', id)
-    .eq('status', 'published')
+    .or('status.eq.published,status.is.null')
     .order('title', { ascending: true });
 
   const mdxOptions = {
