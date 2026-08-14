@@ -23,12 +23,14 @@ export default function ExercicesClient({
   initialExercises, 
   subjects,
   exams,
-  chapters
+  chapters,
+  migrationRequired = false
 }: { 
   initialExercises: Exercise[];
   subjects: Subject[];
   exams: Exam[];
   chapters: Chapter[];
+  migrationRequired?: boolean;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
@@ -153,7 +155,7 @@ export default function ExercicesClient({
           <h1 className="text-2xl font-bold text-navy-900 font-playfair">Banque d'Exercices</h1>
           <p className="text-gray-500 mt-1">Gérez tous les exercices de la plateforme.</p>
         </div>
-        <Button onClick={handleOpenNew}>
+        <Button onClick={handleOpenNew} disabled={migrationRequired} title={migrationRequired ? 'Migration DB requise avant de pouvoir ajouter des exercices' : undefined}>
           <Plus className="h-4 w-4 mr-2" />
           Nouvel Exercice
         </Button>

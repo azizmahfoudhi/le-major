@@ -24,14 +24,15 @@ export default async function ExercicesManager() {
     .select('id, title, subject_id')
     .order('order_index', { ascending: true });
 
-
-  const { data: exercises } = await supabase
+  // Fetch exercises — use only the original base columns to avoid crashing
+  // if the migration (exercises_schema_migration.sql) hasn't been run yet.
+  // Once the migration is applied, the full select below can be used.
+  const { data: exercises, error: exercisesError } = await supabase
     .from('exercises')
     .select(`
       id,
       title,
       difficulty,
-      is_free,
       subject_id,
       statement_body,
       solution_body,
@@ -43,6 +44,10 @@ export default async function ExercicesManager() {
       exams ( title )
     `)
     .order('created_at', { ascending: false });
+
+  if (exercisesError) {
+    console.error('[ExercicesManager] Supabase error:', exercisesError.message);
+  }
 
   const getDifficultyBadge = (level: string) => {
     switch (level) {
@@ -62,11 +67,22 @@ export default async function ExercicesManager() {
   }));
 
   return (
-    <ExercicesClient 
-      initialExercises={formattedExercises} 
-      subjects={subjectsData || []} 
-      exams={examsData || []}
-      chapters={chaptersData || []}
-    />
+    <>
+      {exercisesError && (
+        <div className="mb-4 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <strong>⚠️ Migration requise :</strong> La table <code>exercises</code> n&apos;a pas encore été mise à jour.
+          Veuillez exécuter le fichier <code>exercises_schema_migration.sql</code> dans le SQL Editor de Supabase.
+          <br/>
+          <span className="text-xs mt-1 block text-amber-600">Détail : {exercisesError.message}</span>
+        </div>
+      )}
+      <ExercicesClient 
+        initialExercises={formattedExercises} 
+        subjects={subjectsData || []} 
+        exams={examsData || []}
+        chapters={chaptersData || []}
+        migrationRequired={!!exercisesError}
+      />
+    </>
   );
 }
