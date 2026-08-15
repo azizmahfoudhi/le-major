@@ -92,8 +92,7 @@ export default async function ExamsPage({ searchParams }: { searchParams: Promis
   });
 
   // 4. Fetch unique themes per subject for the generator
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let themesBySubject: Record<string, string[]> = {};
+  const themesBySubject: Record<string, string[]> = {};
   if (subjectIds.length > 0) {
     const { data: exercisesData } = await supabase
       .from('exercises')

@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, Input } from '@/components/ui';
 import { Clock, CheckCircle, ArrowRight, BookOpen, Settings2, Loader2, AlertCircle, Info } from 'lucide-react';
-import Link from 'next/link';
 import { generateCustomExam, startOfficialExam } from '../actions/exams';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

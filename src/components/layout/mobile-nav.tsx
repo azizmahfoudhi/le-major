@@ -2,7 +2,7 @@
 
 import { X, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
 import Logo from '@/components/ui/logo';
