@@ -249,7 +249,25 @@ export default async function SubjectDetailPage({
                 )}
 
                 {/* Exercises grouped by exam */}
-                {Object.entries(exercisesByExam).map(([examId, examExercises]) => {
+                {Object.entries(exercisesByExam)
+                  .sort(([, exercisesA], [, exercisesB]) => {
+                    const titleA = exercisesA[0]?.examTitle || '';
+                    const titleB = exercisesB[0]?.examTitle || '';
+                    
+                    const extractYear = (title: string) => {
+                      const match = title.match(/\b(20\d{2}|19\d{2})\b/);
+                      return match ? parseInt(match[0], 10) : 0;
+                    };
+                    
+                    const yearA = extractYear(titleA);
+                    const yearB = extractYear(titleB);
+                    
+                    if (yearA !== yearB) {
+                      return yearB - yearA; // Newest to oldest
+                    }
+                    return titleA.localeCompare(titleB);
+                  })
+                  .map(([examId, examExercises]) => {
                   const examTitle = examExercises[0]?.examTitle || 'Examen';
                   return (
                     <details key={examId} className="group border border-gray-200 rounded-xl overflow-hidden bg-white">
