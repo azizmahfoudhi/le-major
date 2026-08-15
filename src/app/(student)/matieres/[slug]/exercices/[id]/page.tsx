@@ -4,11 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
-import { mdxComponents } from '@/lib/markdown/components';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
+import { renderMarkdownBody } from '@/lib/markdown/parse';
 
 export const metadata: Metadata = {
   title: 'Exercice | Le Major',
@@ -59,12 +55,9 @@ export default async function ExercisePage({
         .single()
     : { data: null };
 
-  const mdxOptions = {
-    mdxOptions: {
-      remarkPlugins: [remarkMath],
-      rehypePlugins: [rehypeKatex],
-    }
-  };
+  // Pre-render markdown securely using centralized parser
+  const statementContent = await renderMarkdownBody(exercise.statement_body || '*Aucun énoncé*');
+  const solutionContent = exercise.solution_body ? await renderMarkdownBody(exercise.solution_body) : null;
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
@@ -104,13 +97,12 @@ export default async function ExercisePage({
           <CardContent className="p-8">
             <h2 className="text-xl font-bold text-navy-900 mb-6 border-b border-gray-100 pb-4">Énoncé</h2>
             <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <MDXRemote source={exercise.statement_body || '*Aucun énoncé*'} components={mdxComponents} options={mdxOptions as any} />
+              {statementContent}
             </div>
           </CardContent>
         </Card>
 
-        {exercise.solution_body && (
+        {solutionContent && (
           <details className="group bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden open:ring-2 open:ring-emerald-500 open:ring-offset-2 transition-all">
             <summary className="flex items-center justify-between p-6 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
               <div className="flex items-center">
@@ -124,8 +116,7 @@ export default async function ExercisePage({
             
             <div className="p-8 border-t border-gray-100 bg-white">
               <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <MDXRemote source={exercise.solution_body} components={mdxComponents} options={mdxOptions as any} />
+                {solutionContent}
               </div>
             </div>
           </details>

@@ -4,11 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, FileText, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
-import { mdxComponents } from '@/lib/markdown/components';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
+import { renderMarkdownBody } from '@/lib/markdown/parse';
 
 export const metadata: Metadata = {
   title: 'Examen | Le Major',
@@ -48,7 +44,7 @@ export default async function ExamPage({
     notFound();
   }
 
-  const { data: exercises } = await supabase
+  const { data: exercisesData } = await supabase
     .from('exercises')
     .select(`
       id,
@@ -61,12 +57,14 @@ export default async function ExamPage({
     .or('status.eq.published,status.is.null')
     .order('title', { ascending: true });
 
-  const mdxOptions = {
-    mdxOptions: {
-      remarkPlugins: [remarkMath],
-      rehypePlugins: [rehypeKatex],
-    }
-  };
+  // Pre-render markdown securely using centralized parser
+  const exercises = await Promise.all((exercisesData || []).map(async (ex) => {
+    return {
+      ...ex,
+      renderedStatement: await renderMarkdownBody(ex.statement_body || '*Aucun énoncé*'),
+      renderedSolution: ex.solution_body ? await renderMarkdownBody(ex.solution_body) : null
+    };
+  }));
 
   // @ts-expect-error Types Supabase
   const subjectName = exam.subjects?.name || slug;
@@ -130,8 +128,7 @@ export default async function ExamPage({
                       </span>
                     )}
                   </h3>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  <MDXRemote source={exercise.statement_body || '*Aucun énoncé*'} components={mdxComponents} options={mdxOptions as any} />
+                  {exercise.renderedStatement}
                 </div>
               ))
             ) : (
@@ -139,7 +136,7 @@ export default async function ExamPage({
             )}
           </div>
 
-          {(exercises && exercises.some(ex => ex.solution_body)) && (
+          {(exercises && exercises.some(ex => ex.renderedSolution)) && (
             <details className="group mt-12">
               <summary className="flex items-center gap-3 cursor-pointer list-none justify-center py-4 border-2 border-navy-900 text-navy-900 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                 <CheckCircle className="w-5 h-5" />
@@ -151,13 +148,12 @@ export default async function ExamPage({
                 
                 <div className="space-y-12">
                   {exercises.map((exercise) => (
-                    exercise.solution_body ? (
+                    exercise.renderedSolution ? (
                       <div key={exercise.id} className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-lg">
                         <h4 className="text-xl text-emerald-800 font-medium border-l-4 border-emerald-500 pl-4">
                           Correction : {exercise.title}
                         </h4>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        <MDXRemote source={exercise.solution_body} components={mdxComponents} options={mdxOptions as any} />
+                        {exercise.renderedSolution}
                       </div>
                     ) : null
                   ))}

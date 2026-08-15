@@ -19,12 +19,36 @@ export interface ContentFrontmatter {
 }
 
 /**
+ * Pre-processes raw MDX to prevent SSR crashes from common formatting errors:
+ * - Replaces LaTeX {,} with , (crashes MDX parsing outside math blocks)
+ * - Converts standalone [ and ] on their own lines to $$ for math blocks
+ */
+export function preprocessMDX(source: string): string {
+  if (!source) return '';
+  let processed = source;
+  
+  // Replace standalone [ and ] on their own lines with $$
+  processed = processed.replace(/^\[\s*$/gm, '$$$$');
+  processed = processed.replace(/^\]\s*$/gm, '$$$$');
+  
+  // Replace \[ and \] with $$
+  processed = processed.replace(/\\\[/g, '$$$$');
+  processed = processed.replace(/\\\]/g, '$$$$');
+  
+  // Replace {,} with , to prevent MDX from crashing (interpreting it as an invalid JS expression)
+  processed = processed.replace(/\{,\}/g, ',');
+  
+  return processed;
+}
+
+/**
  * Parse and render Markdown/MDX content with full academic support.
  * Runs entirely server-side via next-mdx-remote/rsc — zero client JS.
  */
 export async function renderMarkdown<T = ContentFrontmatter>(source: string) {
+  const safeSource = preprocessMDX(source);
   const { content, frontmatter } = await compileMDX<T>({
-    source,
+    source: safeSource,
     options: {
       parseFrontmatter: true,
       mdxOptions: {
@@ -50,8 +74,9 @@ export async function renderMarkdown<T = ContentFrontmatter>(source: string) {
  * Used for exercise statements, corrections, etc.
  */
 export async function renderMarkdownBody(source: string) {
+  const safeSource = preprocessMDX(source);
   const { content } = await compileMDX({
-    source,
+    source: safeSource,
     options: {
       parseFrontmatter: false,
       mdxOptions: {
