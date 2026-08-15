@@ -3,38 +3,12 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
 import ScoreForm from './score-form';
+import { renderMarkdownBody } from '@/lib/markdown/parse';
 
 export const metadata: Metadata = {
   title: 'Résultats Examen | Le Major',
 };
-
-function renderMath(text: string) {
-  let html = text;
-  
-  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-    try {
-      return katex.renderToString(math, { displayMode: true, throwOnError: false });
-    } catch (e) {
-      return match;
-    }
-  });
-
-  html = html.replace(/\$([^\$]+)\$/g, (match, math) => {
-    try {
-      return katex.renderToString(math, { displayMode: false, throwOnError: false });
-    } catch (e) {
-      return match;
-    }
-  });
-
-  html = html.replace(/\n\n/g, '<br/><br/>');
-  html = html.replace(/\n/g, '<br/>');
-  
-  return html;
-}
 
 export default async function ExamResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: attemptId } = await params;
@@ -84,7 +58,7 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
     .eq('attempt_id', attemptId)
     .order('order_index', { ascending: true });
 
-  const questions = attemptExercises?.map((ae, index) => {
+  const questions = attemptExercises ? await Promise.all(attemptExercises.map(async (ae, index) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ex: any = ae.exercises;
     return {
@@ -92,10 +66,10 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
       number: index + 1,
       theme: ex.theme || 'Exercice',
       points: ex.points || 5,
-      statement: ex.statement || '',
-      solution: ex.solution || ''
+      statementNode: await renderMarkdownBody(ex.statement || '*Aucun énoncé*'),
+      solutionNode: await renderMarkdownBody(ex.solution || '*Pas de correction fournie.*')
     };
-  }) || [];
+  })) : [];
 
   const maxTotalScore = questions.reduce((acc, q) => acc + (parseFloat(q.points as string) || 0), 0);
 
@@ -144,10 +118,9 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
               <div className="p-6 sm:p-8">
                 <div className="mb-8">
                   <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Énoncé</h4>
-                  <div 
-                    className="prose prose-slate max-w-none text-slate-700"
-                    dangerouslySetInnerHTML={{ __html: renderMath(q.statement) }}
-                  />
+                  <div className="prose prose-slate max-w-none text-slate-700">
+                    {q.statementNode}
+                  </div>
                 </div>
                 
                 <div className="bg-emerald-50/50 rounded-lg p-6 border border-emerald-100">
@@ -155,10 +128,9 @@ export default async function ExamResultsPage({ params }: { params: Promise<{ id
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Correction Officielle
                   </h4>
-                  <div 
-                    className="prose prose-slate max-w-none text-slate-800"
-                    dangerouslySetInnerHTML={{ __html: renderMath(q.solution || "Pas de correction fournie.") }}
-                  />
+                  <div className="prose prose-slate max-w-none text-slate-800">
+                    {q.solutionNode}
+                  </div>
                 </div>
               </div>
             </div>
