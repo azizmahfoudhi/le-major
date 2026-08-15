@@ -19,9 +19,12 @@ export interface ContentFrontmatter {
 }
 
 /**
- * Pre-processes raw MDX to prevent SSR crashes from common formatting errors:
+ * Pre-processes raw MDX to prevent SSR crashes and rendering bugs:
  * - Replaces LaTeX {,} with , (crashes MDX parsing outside math blocks)
  * - Converts standalone [ and ] on their own lines to $$ for math blocks
+ * - Escapes % signs (treated as comments in KaTeX)
+ * - Escapes setext heading underlines (lines of ===/ ---) to prevent them from
+ *   eating the line above or rendering as long = strings
  */
 export function preprocessMDX(source: string): string {
   if (!source) return '';
@@ -37,9 +40,35 @@ export function preprocessMDX(source: string): string {
   
   // Replace {,} with , to prevent MDX from crashing (interpreting it as an invalid JS expression)
   processed = processed.replace(/\{,\}/g, ',');
+
   // Escape % signs to prevent KaTeX from treating them as comments (which breaks \boxed etc.)
-  // We only escape if it's not already escaped
+  // Only escape if not already escaped
   processed = processed.replace(/(?<!\\)%/g, '\\%');
+
+  // Fix setext heading issue: a line consisting only of '=' or '-' right after a text line
+  // is interpreted by remark-gfm as an H1/H2 heading underline.
+  // This causes the '===' line to disappear (the text above becomes a heading).
+  // We break this by prefixing such lines with a backslash so they render literally.
+  // We skip lines that are already inside $$ math blocks.
+  const lines = processed.split('\n');
+  let inMathBlock = false;
+  const fixed: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim() === '$$') {
+      inMathBlock = !inMathBlock;
+      fixed.push(line);
+      continue;
+    }
+    // Detect setext heading underlines (lines of only = or only -)
+    if (!inMathBlock && /^={2,}\s*$/.test(line)) {
+      // Prepend a backslash to escape setext interpretation
+      fixed.push('\\' + line);
+    } else {
+      fixed.push(line);
+    }
+  }
+  processed = fixed.join('\n');
   
   return processed;
 }
