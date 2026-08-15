@@ -81,13 +81,12 @@ export default async function SubjectDetailPage({
     };
   });
 
-  // Fetch real exercises for this subject, sorted by exam then order
   const { data: exercisesData, error: exercisesError } = await supabase
     .from('exercises')
-    .select('id, title, difficulty, subject_id, exam_id, theme')
+    .select('id, title, difficulty, subject_id, exam_id, theme, created_at')
     .eq('subject_id', subject.id)
     .order('exam_id', { ascending: true, nullsFirst: false })
-    .order('title');
+    .order('created_at', { ascending: true });
 
   if (exercisesError) {
     console.error('Error fetching exercises on student page:', exercisesError.message);
@@ -253,13 +252,14 @@ export default async function SubjectDetailPage({
                 {Object.entries(exercisesByExam).map(([examId, examExercises]) => {
                   const examTitle = examExercises[0]?.examTitle || 'Examen';
                   return (
-                    <div key={examId}>
-                      <div className="flex items-center gap-2 mb-3">
+                    <details key={examId} className="group border border-gray-200 rounded-xl overflow-hidden bg-white">
+                      <summary className="flex items-center gap-2 px-5 py-4 cursor-pointer hover:bg-gray-50 list-none [&::-webkit-details-marker]:hidden focus:outline-none select-none">
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-open:rotate-90 transition-transform" />
                         <FileText className="w-4 h-4 text-navy-500 shrink-0" />
                         <h3 className="text-sm font-semibold text-navy-700 uppercase tracking-wider">{examTitle}</h3>
                         <span className="text-xs text-gray-400">— {examExercises.length} exercice{examExercises.length > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
+                      </summary>
+                      <div className="border-t border-gray-100 divide-y divide-gray-100">
                         {examExercises.map((exercise, idx) => (
                           <Link key={exercise.id} href={`/matieres/${slug}/exercices/${exercise.id}`}>
                             <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white hover:bg-gold-50 transition-colors group cursor-pointer">
@@ -286,7 +286,7 @@ export default async function SubjectDetailPage({
                           </Link>
                         ))}
                       </div>
-                    </div>
+                    </details>
                   );
                 })}
               </div>
