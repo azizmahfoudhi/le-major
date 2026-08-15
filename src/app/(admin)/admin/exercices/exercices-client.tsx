@@ -40,9 +40,11 @@ export default function ExercicesClient({
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState('easy');
   const [subjectId, setSubjectId] = useState(subjects[0]?.id || '');
+  
   // chapters and exams filtered by selected subject
   const filteredChapters = chapters.filter(c => c.subject_id === subjectId);
   const filteredExams = exams.filter(e => e.subject_id === subjectId);
+  
   const [statement, setStatement] = useState('');
   const [solution, setSolution] = useState('');
   
@@ -55,13 +57,46 @@ export default function ExercicesClient({
   const [points, setPoints] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('');
 
+  // Nouveaux filtres
+  const [filterSubject, setFilterSubject] = useState<string>('all');
+  const [filterExam, setFilterExam] = useState<string>('all');
+
   const columns = [
     { accessorKey: 'titre', header: 'Titre' },
     { accessorKey: 'matiere', header: 'Matière' },
     { accessorKey: 'examen', header: 'Examen Source' },
-    { accessorKey: 'theme', header: 'Thèmes' },
+    { 
+      accessorKey: 'theme', 
+      header: 'Thèmes',
+      cell: (item: Exercise) => {
+        if (!item.theme) return <span className="text-gray-400">-</span>;
+        const themes = item.theme.split(', ');
+        return (
+          <div className="flex flex-wrap gap-1 max-w-[250px]">
+            {themes.slice(0, 2).map((t, i) => (
+              <span key={i} className="inline-block text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full truncate max-w-[150px]" title={t}>
+                {t}
+              </span>
+            ))}
+            {themes.length > 2 && (
+              <span className="inline-block text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full" title={themes.slice(2).join(', ')}>
+                +{themes.length - 2}
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
     { accessorKey: 'difficulte', header: 'Difficulté' }
   ];
+
+  const filteredExercisesForTable = initialExercises.filter(ex => {
+    if (filterSubject !== 'all' && ex._raw.subject_id !== filterSubject) return false;
+    if (filterExam !== 'all' && ex._raw.exam_id !== filterExam) return false;
+    return true;
+  });
+
+  const availableExamsForFilter = exams.filter(e => filterSubject === 'all' || e.subject_id === filterSubject);
 
   const handleOpenNew = () => {
     setEditingItem(null);
@@ -176,10 +211,39 @@ export default function ExercicesClient({
       </div>
 
       <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Matière</label>
+            <select
+              className="w-full sm:w-64 h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm"
+              value={filterSubject}
+              onChange={e => {
+                setFilterSubject(e.target.value);
+                setFilterExam('all');
+              }}
+            >
+              <option value="all">Toutes les matières</option>
+              {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Examen Source</label>
+            <select
+              className="w-full sm:w-64 h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm disabled:opacity-50"
+              value={filterExam}
+              onChange={e => setFilterExam(e.target.value)}
+              disabled={availableExamsForFilter.length === 0}
+            >
+              <option value="all">Tous les examens</option>
+              {availableExamsForFilter.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
+            </select>
+          </div>
+        </div>
+        
         {initialExercises.length > 0 ? (
           <DataTable 
             columns={columns} 
-            data={initialExercises}
+            data={filteredExercisesForTable}
             enableSearch={true}
             searchPlaceholder="Rechercher un exercice..."
             actions={(item) => (
