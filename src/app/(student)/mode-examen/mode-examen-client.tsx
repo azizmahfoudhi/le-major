@@ -1,18 +1,18 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, Input } from '@/components/ui';
-import { Clock, CheckCircle, ArrowRight, BookOpen, Settings2, Loader2, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle, ArrowRight, BookOpen, Settings2, Loader2, AlertCircle, Info } from 'lucide-react';
 import Link from 'next/link';
 import { generateCustomExam, startOfficialExam } from '../actions/exams';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function ModeExamenClient({ exams, subjects }: { exams: any[]; subjects: any[] }) {
+export default function ModeExamenClient({ exams, subjects, themesBySubject }: { exams: any[]; subjects: any[]; themesBySubject?: Record<string, string[]> }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startingExamId, setStartingExamId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(subjects[0]?.id || '');
 
   const handleGenerate = async (formData: FormData) => {
     setIsGenerating(true);
@@ -31,6 +31,8 @@ export default function ModeExamenClient({ exams, subjects }: { exams: any[]; su
       }
     }
   };
+
+  const currentThemes = (themesBySubject && themesBySubject[selectedSubjectId]) || [];
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6">
@@ -129,10 +131,18 @@ export default function ModeExamenClient({ exams, subjects }: { exams: any[]; su
                 Générateur d'Examen Le Major
               </CardTitle>
               <p className="text-sm text-gray-500 mt-2">
-                Sélectionnez vos critères, nous piochons dans les archives pour vous créer un sujet sur-mesure.
+                Sélectionnez vos critères pour composer un examen sur-mesure.
               </p>
             </CardHeader>
             <CardContent className="p-6 md:p-8">
+              
+              <div className="mb-8 flex items-start space-x-3 bg-blue-50/80 border border-blue-100 p-4 rounded-xl text-blue-900">
+                <Info className="w-5 h-5 shrink-0 mt-0.5 text-blue-600" />
+                <p className="text-sm leading-relaxed">
+                  <strong>Entraînement 100% réel :</strong> Le système pioche exclusivement parmi les exercices des annales officielles passées. Nous concevons le sujet idéal, adapté à vos points faibles, sans jamais utiliser de questions fictives.
+                </p>
+              </div>
+
               {error && (
                 <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg flex items-center">
                   <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
@@ -145,6 +155,8 @@ export default function ModeExamenClient({ exams, subjects }: { exams: any[]; su
                     <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">1. Matière</h3>
                     <select 
                       name="subject"
+                      value={selectedSubjectId}
+                      onChange={(e) => setSelectedSubjectId(e.target.value)}
                       className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
                       required
                     >
@@ -155,16 +167,17 @@ export default function ModeExamenClient({ exams, subjects }: { exams: any[]; su
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">2. Difficulté visée</h3>
+                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">2. Filtre par Thème</h3>
                     <select 
-                      name="difficulty"
+                      name="theme"
                       className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
                     >
-                      <option value="all">Mixte (Conditions réelles)</option>
-                      <option value="easy">Facile (Révisions de base)</option>
-                      <option value="intermediate">Intermédiaire</option>
-                      <option value="hard">Difficile (Entraînement intensif)</option>
+                      <option value="">Tous les chapitres</option>
+                      {currentThemes.map(theme => (
+                        <option key={theme} value={theme}>{theme}</option>
+                      ))}
                     </select>
+                    <p className="text-xs text-gray-500">Cibler un chapitre spécifique, ou laisser sur "Tous".</p>
                   </div>
 
                   <div className="space-y-4">
@@ -182,9 +195,16 @@ export default function ModeExamenClient({ exams, subjects }: { exams: any[]; su
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">4. Filtre par Thème</h3>
-                    <Input type="text" name="theme" placeholder="Ex: Consommateur, Coûts (Optionnel)" className="h-11" />
-                    <p className="text-xs text-gray-400">Laissez vide pour inclure tous les chapitres.</p>
+                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">4. Difficulté visée</h3>
+                    <select 
+                      name="difficulty"
+                      className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
+                    >
+                      <option value="all">Mixte (Conditions réelles)</option>
+                      <option value="easy">Facile (Révisions de base)</option>
+                      <option value="intermediate">Intermédiaire</option>
+                      <option value="hard">Difficile (Entraînement intensif)</option>
+                    </select>
                   </div>
                 </div>
 

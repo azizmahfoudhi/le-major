@@ -88,5 +88,33 @@ export default async function ExamsPage() {
     };
   });
 
-  return <ModeExamenClient exams={examsWithAttempts} subjects={subjects} />;
+  // 4. Fetch unique themes per subject for the generator
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let themesBySubject: Record<string, string[]> = {};
+  if (subjectIds.length > 0) {
+    const { data: exercisesData } = await supabase
+      .from('exercises')
+      .select('theme, chapters!inner(subject_id)')
+      .in('chapters.subject_id', subjectIds)
+      .not('theme', 'is', null)
+      .neq('theme', '');
+
+    subjectIds.forEach(id => themesBySubject[id] = []);
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    exercisesData?.forEach((ex: any) => {
+      const sId = ex.chapters.subject_id;
+      const theme = ex.theme?.trim();
+      if (theme && !themesBySubject[sId].includes(theme)) {
+        themesBySubject[sId].push(theme);
+      }
+    });
+    
+    // Sort themes alphabetically
+    Object.keys(themesBySubject).forEach(k => {
+      themesBySubject[k].sort();
+    });
+  }
+
+  return <ModeExamenClient exams={examsWithAttempts} subjects={subjects} themesBySubject={themesBySubject} />;
 }
