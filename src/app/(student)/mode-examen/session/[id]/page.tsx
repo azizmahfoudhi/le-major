@@ -20,7 +20,22 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
   // 1. Fetch the attempt details
   const { data: attempt, error: attemptError } = await supabase
     .from('exam_attempts')
-    .select('id, status, exam_id, exams(title, duration_minutes)')
+    .select(`
+      id, status, exam_id,
+      exams (
+        title, duration_minutes, is_mock_exam, description,
+        subjects (
+          name,
+          semesters (
+            editions (
+              levels (
+                formations ( name )
+              )
+            )
+          )
+        )
+      )
+    `)
     .eq('id', attemptId)
     .eq('student_id', user.id)
     .single();
@@ -29,10 +44,12 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
     redirect('/mode-examen');
   }
 
-  // @ts-expect-error Types Supabase
-  const title = attempt.exams ? (attempt.exams as {title: string}).title : 'Examen Le Major (Personnalisé)';
-  // @ts-expect-error Types Supabase
-  const durationMinutes = attempt.exams ? (attempt.exams as {duration_minutes: number}).duration_minutes : 120; // fallback if custom
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const examData = attempt.exams as any;
+  const title = examData?.title || 'Examen Le Major';
+  const durationMinutes = examData?.duration_minutes || 120;
+  const matiere = examData?.subjects?.name || null;
+  const filiere = examData?.subjects?.semesters?.editions?.levels?.formations?.name || null;
 
   // 2. Fetch the exercises linked to this attempt via the junction table
   const { data: attemptExercises } = await supabase
@@ -86,6 +103,8 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
       title={title}
       durationMinutes={durationMinutes}
       questions={questions}
+      matiere={matiere}
+      filiere={filiere}
     />
   );
 }
