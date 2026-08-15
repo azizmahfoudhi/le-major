@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { generateCustomExam, startOfficialExam } from '../actions/exams';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function ModeExamenClient({ exams, subjects, themesBySubject }: { exams: any[]; subjects: any[]; themesBySubject?: Record<string, string[]> }) {
+export default function ModeExamenClient({ exams, subjects, themesBySubject, initialSubjectSlug }: { exams: any[]; subjects: any[]; themesBySubject?: Record<string, string[]>; initialSubjectSlug?: string }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startingExamId, setStartingExamId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(subjects[0]?.id || '');
+  const defaultSubjectId = subjects.find(s => s.slug === initialSubjectSlug)?.id || subjects[0]?.id || '';
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(defaultSubjectId);
 
   const handleGenerate = async (formData: FormData) => {
     setIsGenerating(true);
@@ -24,7 +25,6 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
         setIsGenerating(false);
       }
     } catch (e) {
-      // The redirect throws an error in Next.js, so we handle it gracefully if it's not a redirect
       if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
         setError("Erreur inattendue");
         setIsGenerating(false);
@@ -33,6 +33,9 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
   };
 
   const currentThemes = (themesBySubject && themesBySubject[selectedSubjectId]) || [];
+
+  // Filter exams by the globally selected subject
+  const filteredExams = exams.filter(e => e.subject_id === selectedSubjectId);
 
   return (
     <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6">
@@ -45,6 +48,21 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
         </p>
       </div>
 
+      <div className="flex justify-center mb-8">
+        <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200 inline-flex items-center">
+          <span className="text-sm font-semibold text-gray-500 mr-4 ml-3">Matière :</span>
+          <select 
+            value={selectedSubjectId}
+            onChange={(e) => setSelectedSubjectId(e.target.value)}
+            className="h-10 px-4 rounded-lg bg-gray-50 border-none focus:ring-2 focus:ring-gold-500 font-medium text-navy-900 cursor-pointer outline-none min-w-[200px]"
+          >
+            {subjects.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <Tabs defaultValue="officiel" className="w-full">
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
           <TabsTrigger value="officiel">Sujets Officiels</TabsTrigger>
@@ -52,15 +70,15 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
         </TabsList>
 
         <TabsContent value="officiel" className="space-y-6 mt-4">
-          {exams.length === 0 ? (
-            <Card className="p-12 text-center text-gray-500">
+          {filteredExams.length === 0 ? (
+            <Card className="p-12 text-center text-gray-500 border-dashed">
               <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium text-navy-900 mb-2">Aucun sujet officiel disponible</p>
-              <p>Il n'y a pas d'examens publiés pour vos matières actuellement.</p>
+              <p>Il n'y a pas encore d'examens publiés pour cette matière.</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {exams.map((exam) => (
+              {filteredExams.map((exam) => (
                 <Card key={exam.id} className="overflow-hidden hover:border-gold-300 transition-all shadow-sm hover:shadow-md">
                   <CardContent className="p-0 flex flex-col h-full">
                     <div className="p-6 flex-1">
@@ -150,24 +168,11 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
                 </div>
               )}
               <form className="space-y-8" action={handleGenerate}>
+                <input type="hidden" name="subject" value={selectedSubjectId} />
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">1. Matière</h3>
-                    <select 
-                      name="subject"
-                      value={selectedSubjectId}
-                      onChange={(e) => setSelectedSubjectId(e.target.value)}
-                      className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
-                      required
-                    >
-                      {subjects.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">2. Filtre par Thème</h3>
+                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">1. Filtre par Thème</h3>
                     <select 
                       name="theme"
                       className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"
@@ -181,7 +186,7 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">3. Format du sujet</h3>
+                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">2. Format du sujet</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-gray-600 mb-1">Durée (min)</label>
@@ -195,7 +200,7 @@ export default function ModeExamenClient({ exams, subjects, themesBySubject }: {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">4. Difficulté visée</h3>
+                    <h3 className="font-semibold text-navy-900 text-lg border-b border-gray-100 pb-2">3. Difficulté visée</h3>
                     <select 
                       name="difficulty"
                       className="w-full h-11 px-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-500 bg-white"

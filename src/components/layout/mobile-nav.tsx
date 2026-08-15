@@ -2,6 +2,7 @@
 
 import { X, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname, useParams } from 'next/navigation';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
 import Logo from '@/components/ui/logo';
@@ -14,6 +15,9 @@ interface MobileNavProps {
 }
 
 export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavProps) {
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
+
   if (!isOpen) return null;
 
   return (
@@ -42,10 +46,12 @@ export default function MobileNav({ isOpen, onClose, currentPath }: MobileNavPro
           <nav className="flex flex-col gap-2 px-2">
             {STUDENT_NAV.map((item) => {
               const isActive = currentPath === item.href || (item.href !== '/accueil' && currentPath.startsWith(item.href));
+              const targetHref = (item.href === '/mode-examen' && slug) ? `${item.href}?subject=${slug}` : item.href;
+
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={targetHref}
                   onClick={onClose}
                   className={cn(
                     "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors",

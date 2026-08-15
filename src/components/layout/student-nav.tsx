@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import { STUDENT_NAV } from '@/lib/constants';
 import { cn } from '@/lib/utils/cn';
 import { Menu, User } from 'lucide-react';
@@ -11,6 +11,9 @@ import Logo from '@/components/ui/logo';
 
 export default function StudentNav() {
   const pathname = usePathname();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
+  
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -23,10 +26,12 @@ export default function StudentNav() {
           <div className="hidden md:flex items-center gap-6">
             {STUDENT_NAV.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/accueil' && pathname.startsWith(item.href));
+              const targetHref = (item.href === '/mode-examen' && slug) ? `${item.href}?subject=${slug}` : item.href;
+              
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={targetHref}
                   className={cn(
                     "text-sm font-medium transition-colors hover:text-white",
                     isActive ? "text-white" : "text-navy-200"

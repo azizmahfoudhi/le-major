@@ -8,7 +8,8 @@ export const metadata: Metadata = {
   description: 'Entraînez-vous dans les conditions réelles',
 };
 
-export default async function ExamsPage() {
+export default async function ExamsPage({ searchParams }: { searchParams: Promise<{ subject?: string }> }) {
+  const { subject: urlSubjectSlug } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -25,7 +26,8 @@ export default async function ExamsPage() {
           subject_id,
           subjects (
             id,
-            name
+            name,
+            slug
           )
         )
       )
@@ -33,13 +35,13 @@ export default async function ExamsPage() {
     .eq('student_id', user.id)
     .eq('is_active', true);
 
-  const subjectMap = new Map<string, { id: string, name: string }>();
+  const subjectMap = new Map<string, { id: string, name: string, slug: string }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activations?.forEach((act: any) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     act.packages?.package_subjects?.forEach((ps: any) => {
       if (ps.subjects) {
-        subjectMap.set(ps.subjects.id, { id: ps.subjects.id, name: ps.subjects.name });
+        subjectMap.set(ps.subjects.id, { id: ps.subjects.id, name: ps.subjects.name, slug: ps.subjects.slug });
       }
     });
   });
@@ -59,6 +61,7 @@ export default async function ExamsPage() {
         description, 
         duration_minutes, 
         is_mock_exam,
+        subject_id,
         subjects!inner (
           name,
           slug
@@ -116,5 +119,5 @@ export default async function ExamsPage() {
     });
   }
 
-  return <ModeExamenClient exams={examsWithAttempts} subjects={subjects} themesBySubject={themesBySubject} />;
+  return <ModeExamenClient exams={examsWithAttempts} subjects={subjects} themesBySubject={themesBySubject} initialSubjectSlug={urlSubjectSlug} />;
 }
