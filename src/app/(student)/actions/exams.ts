@@ -24,15 +24,15 @@ export async function generateCustomExam(formData: FormData) {
   // Build the query to fetch exercises
   let query = supabase
     .from('exercises')
-    .select('id, duration_minutes, points, chapters!inner(subject_id)')
-    .eq('chapters.subject_id', subjectId);
+    .select('id, duration_minutes, points')
+    .eq('subject_id', subjectId)
+    .eq('status', 'published');
 
   if (difficulty !== 'all') {
     query = query.eq('difficulty', difficulty);
   }
 
   if (theme && theme.trim() !== '') {
-    // Simple ilike search for themes. A robust implementation might use Full Text Search.
     query = query.ilike('theme', `%${theme.trim()}%`);
   }
 
