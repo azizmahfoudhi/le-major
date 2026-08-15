@@ -106,9 +106,15 @@ export default async function ExamsPage({ searchParams }: { searchParams: Promis
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exercisesData?.forEach((ex: any) => {
       const sId = ex.subject_id;
-      const theme = ex.theme?.trim();
-      if (sId && theme && !themesBySubject[sId].includes(theme)) {
-        themesBySubject[sId].push(theme);
+      const themeRaw = ex.theme?.trim();
+      if (sId && themeRaw) {
+        // Split by comma in case an exercise belongs to multiple themes
+        const themes = themeRaw.split(',').map((t: string) => t.trim()).filter(Boolean);
+        themes.forEach((theme: string) => {
+          if (!themesBySubject[sId].includes(theme)) {
+            themesBySubject[sId].push(theme);
+          }
+        });
       }
     });
     
