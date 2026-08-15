@@ -20,36 +20,51 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
   // 1. Fetch the attempt details
   const { data: attempt, error: attemptError } = await supabase
     .from('exam_attempts')
-    .select(`
-      id, status, exam_id,
-      exams (
-        title, duration_minutes, is_mock_exam, description,
-        subjects (
-          name,
-          semesters (
-            editions (
-              levels (
-                formations ( name )
-              )
-            )
-          )
-        )
-      )
-    `)
+    .select('id, status, exam_id')
     .eq('id', attemptId)
     .eq('student_id', user.id)
     .single();
 
   if (attemptError || !attempt) {
+    console.error('Error fetching attempt:', attemptError);
     redirect('/mode-examen');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const examData = attempt.exams as any;
-  const title = examData?.title || 'Examen Le Major';
-  const durationMinutes = examData?.duration_minutes || 120;
-  const matiere = examData?.subjects?.name || null;
-  const filiere = examData?.subjects?.semesters?.editions?.levels?.formations?.name || null;
+  // 1.5 Fetch Exam Details if exam_id exists
+  let title = 'Examen Le Major (Personnalisé)';
+  let durationMinutes = 120;
+  let matiere = null;
+  let filiere = null;
+
+  if (attempt.exam_id) {
+    const { data: examData, error: examError } = await supabase
+      .from('exams')
+      .select(`
+        title, duration_minutes, is_mock_exam, description, subject_id,
+        subjects ( name )
+      `)
+      .eq('id', attempt.exam_id)
+      .single();
+      
+    if (!examError && examData) {
+      title = examData.title;
+      durationMinutes = examData.duration_minutes;
+      // @ts-expect-error Types Supabase
+      matiere = examData.subjects?.name || null;
+      
+      // Manually fetch filiere to avoid deep join errors
+      if (examData.subject_id) {
+        const { data: subData } = await supabase
+          .from('subjects')
+          .select('semesters(editions(levels(formations(name))))')
+          .eq('id', examData.subject_id)
+          .single();
+        
+        // @ts-expect-error Deeply nested extraction
+        filiere = subData?.semesters?.editions?.levels?.formations?.name || null;
+      }
+    }
+  }
 
   // 2. Fetch the exercises linked to this attempt via the junction table
   const { data: attemptExercises } = await supabase
