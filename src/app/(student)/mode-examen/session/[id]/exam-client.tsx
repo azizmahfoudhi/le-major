@@ -161,52 +161,41 @@ export default function ExamClient({ attemptId, title, durationMinutes, question
         <main className="flex-1 overflow-y-auto bg-gray-100 py-6 px-4 sm:px-8">
           <div className="max-w-3xl mx-auto space-y-6 pb-24">
 
-            {/* IHEC-style exam header card */}
-            <div className="bg-white shadow-sm border border-gray-300 font-serif" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              
-              {/* Row 1: logos + ministry */}
-              <div className="grid grid-cols-3 border-b border-gray-300 text-center text-xs">
-                <div className="border-r border-gray-300 p-3 flex flex-col items-center justify-center gap-1">
-                  <div className="w-10 h-10 bg-[#3d1a1a] rounded flex items-center justify-center text-white font-bold text-sm">
+            {/* Real Exam Header */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+              <div className="bg-navy-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white/10 rounded flex items-center justify-center text-white font-bold text-xs">
                     LM
                   </div>
-                  <span className="text-[10px] text-gray-500 leading-tight">Le Major</span>
+                  <span className="font-bold text-white tracking-widest text-sm">LE MAJOR</span>
                 </div>
-                <div className="border-r border-gray-300 p-3 flex flex-col items-center justify-center gap-0.5">
-                  <p className="text-[9px] font-semibold leading-tight text-gray-700">Ministère de l&apos;Enseignement Supérieur</p>
-                  <p className="text-[9px] font-semibold leading-tight text-gray-700">et de la Recherche Scientifique</p>
-                  <p className="text-[9px] text-gray-500 mt-0.5" dir="rtl">وزارة التعليم العالي والبحث العلمي</p>
-                </div>
-                <div className="p-3 flex flex-col items-center justify-center gap-0.5">
-                  <div className="flex items-end gap-0.5 mb-0.5">
-                    {[4,6,8,6,4].map((h, i) => (
-                      <div key={i} className="w-1 bg-[#3d1a1a] rounded-t" style={{height: `${h}px`}} />
-                    ))}
-                  </div>
-                  <p className="text-[9px] text-gray-700 font-semibold" dir="rtl">جامعة قرطاج</p>
-                  <p className="text-[9px] text-gray-600">Université de Carthage</p>
+                <div className="bg-gold-500 text-navy-900 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-widest self-start sm:self-auto">
+                  Sujet d'Examen Officiel
                 </div>
               </div>
-
-              {/* Row 2: Exam title */}
-              <div className="border-b border-gray-300 px-4 py-2.5 text-center">
-                <p className="font-bold text-sm tracking-wide">{title}</p>
-              </div>
-
-              {/* Row 3: Filière / Matière / Durée */}
-              <div className="grid grid-cols-[1fr_3fr_1fr] text-xs">
-                <div className="border-r border-gray-300 px-3 py-3 flex items-center">
-                  {filiere && <span className="text-gray-500">{filiere}</span>}
-                </div>
-                <div className="border-r border-gray-300 px-4 py-3 space-y-1">
-                  {filiere && <p><span className="font-semibold">Filière :</span> {filiere}</p>}
-                  {matiere && <p><span className="font-semibold">Matière :</span> {matiere}</p>}
-                  <p><span className="font-semibold">Session Le Major</span> — Mode Examen</p>
-                </div>
-                <div className="px-3 py-3 flex flex-col items-center justify-center gap-1">
-                  <p className="text-[10px] text-gray-500">Durée</p>
-                  <div className="border-2 border-gray-800 rounded px-2 py-0.5">
-                    <span className="font-bold text-sm">{durationMinutes >= 60 ? `${Math.floor(durationMinutes/60)}H${durationMinutes % 60 > 0 ? (durationMinutes%60).toString().padStart(2,'0') : ''}` : `${durationMinutes}min`}</span>
+              
+              <div className="p-6 sm:p-8 border-b-4 border-navy-900">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-navy-900 mb-6 leading-tight">{title}</h1>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">
+                  {filiere && (
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1 font-semibold">Filière</p>
+                      <p className="font-medium text-navy-900">{filiere}</p>
+                    </div>
+                  )}
+                  {matiere && (
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1 font-semibold">Matière</p>
+                      <p className="font-medium text-navy-900">{matiere}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1 font-semibold">Durée de l'épreuve</p>
+                    <p className="font-bold text-navy-900 text-base">
+                      {durationMinutes >= 60 ? `${Math.floor(durationMinutes/60)}H${durationMinutes % 60 > 0 ? (durationMinutes%60).toString().padStart(2,'0') : ''}` : `${durationMinutes}min`}
+                    </p>
                   </div>
                 </div>
               </div>
