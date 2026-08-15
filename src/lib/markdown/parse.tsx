@@ -1,0 +1,140 @@
+import { compileMDX } from 'next-mdx-remote/rsc';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkDirective from 'remark-directive';
+import rehypeKatex from 'rehype-katex';
+import { remarkAcademicCallouts } from './plugins/remark-academic-callouts';
+import { mdxComponents } from './components';
+
+export interface ContentFrontmatter {
+  title?: string;
+  type?: 'lesson' | 'summary' | 'resource';
+  matiere?: string;
+  chapitre?: string;
+  difficulte?: 'easy' | 'intermediate' | 'hard';
+  points?: number;
+  duree?: number;
+  edition?: string;
+  statut?: 'draft' | 'published' | 'archived';
+}
+
+/**
+ * Pre-processes raw MDX to prevent SSR crashes from common formatting errors:
+ * - Replaces LaTeX {,} with , (crashes MDX parsing outside math blocks)
+ * - Converts standalone [ and ] on their own lines to $$ for math blocks
+ */
+export function preprocessMDX(source: string): string {
+  if (!source) return '';
+  let processed = source;
+  
+  // Replace standalone [ and ] on their own lines with $$
+  processed = processed.replace(/^\[\s*$/gm, '$$$$');
+  processed = processed.replace(/^\]\s*$/gm, '$$$$');
+  
+  // Replace \[ and \] with $$
+  processed = processed.replace(/\\\[/g, '$$$$');
+  processed = processed.replace(/\\\]/g, '$$$$');
+  
+  // Replace {,} with , to prevent MDX from crashing (interpreting it as an invalid JS expression)
+  processed = processed.replace(/\{,\}/g, ',');
+  
+  return processed;
+}
+
+/**
+ * Parse and render Markdown/MDX content with full academic support.
+ * Runs entirely server-side via next-mdx-remote/rsc — zero client JS.
+ */
+export async function renderMarkdown<T = ContentFrontmatter>(source: string) {
+  const safeSource = preprocessMDX(source);
+  
+  try {
+    const { content, frontmatter } = await compileMDX<T>({
+      source: safeSource,
+      options: {
+        parseFrontmatter: true,
+        mdxOptions: {
+          remarkPlugins: [
+            remarkGfm,
+            remarkMath,
+            remarkDirective,
+            remarkAcademicCallouts,
+          ],
+          rehypePlugins: [
+            [rehypeKatex, { strict: false, throwOnError: false }],
+          ],
+        },
+      },
+      components: mdxComponents,
+    });
+
+    return { content, frontmatter };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('MDX Compilation Error in full content:', err.message);
+    
+    const content = (
+      <div className="p-6 border border-rose-200 bg-rose-50 rounded-lg text-rose-800 my-8">
+        <h2 className="text-xl font-semibold mb-2 text-rose-900">Erreur de syntaxe MDX</h2>
+        <p className="mb-4">Ce cours contient une erreur de formatage qui empêche son affichage normal. Le contenu brut est affiché ci-dessous :</p>
+        <pre className="whitespace-pre-wrap font-mono text-sm bg-white p-4 rounded border border-rose-200 overflow-x-auto text-gray-800">
+          {source}
+        </pre>
+      </div>
+    );
+    
+    return { content, frontmatter: {} as T };
+  }
+}
+
+/**
+ * Render plain Markdown without frontmatter parsing.
+ * Used for exercise statements, corrections, etc.
+ */
+export async function renderMarkdownBody(source: string) {
+  const safeSource = preprocessMDX(source);
+  
+  try {
+    const { content } = await compileMDX({
+      source: safeSource,
+      options: {
+        parseFrontmatter: false,
+        mdxOptions: {
+          remarkPlugins: [
+            remarkGfm,
+            remarkMath,
+            remarkDirective,
+            remarkAcademicCallouts,
+          ],
+          rehypePlugins: [
+            [rehypeKatex, { strict: false, throwOnError: false }],
+          ],
+        },
+      },
+      components: mdxComponents,
+    });
+
+    return content;
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('MDX Compilation Error:', err.message);
+    
+    // Return a safe fallback UI so the page doesn't crash
+    return (
+      <div className="p-4 border border-rose-200 bg-rose-50 rounded-lg text-rose-800">
+        <p className="font-semibold mb-2 flex items-center">
+          <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          Erreur d'affichage (Syntaxe invalide)
+        </p>
+        <p className="text-sm opacity-90 mb-4">
+          Le contenu contient des caractères non reconnus (ex: accolades non fermées ou balises mal formées). Voici le contenu brut :
+        </p>
+        <pre className="whitespace-pre-wrap font-mono text-xs bg-white/50 p-3 rounded border border-rose-100 overflow-x-auto">
+          {source}
+        </pre>
+      </div>
+    );
+  }
+}
