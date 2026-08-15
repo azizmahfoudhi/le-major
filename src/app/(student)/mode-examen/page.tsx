@@ -96,8 +96,8 @@ export default async function ExamsPage({ searchParams }: { searchParams: Promis
   if (subjectIds.length > 0) {
     const { data: exercisesData } = await supabase
       .from('exercises')
-      .select('theme, chapters!inner(subject_id)')
-      .in('chapters.subject_id', subjectIds)
+      .select('theme, subject_id')
+      .in('subject_id', subjectIds)
       .not('theme', 'is', null)
       .neq('theme', '');
 
@@ -105,9 +105,9 @@ export default async function ExamsPage({ searchParams }: { searchParams: Promis
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exercisesData?.forEach((ex: any) => {
-      const sId = ex.chapters.subject_id;
+      const sId = ex.subject_id;
       const theme = ex.theme?.trim();
-      if (theme && !themesBySubject[sId].includes(theme)) {
+      if (sId && theme && !themesBySubject[sId].includes(theme)) {
         themesBySubject[sId].push(theme);
       }
     });
