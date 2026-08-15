@@ -81,11 +81,12 @@ export default async function SubjectDetailPage({
     };
   });
 
-  // Fetch real exercises for this subject
+  // Fetch real exercises for this subject, sorted by exam then order
   const { data: exercisesData, error: exercisesError } = await supabase
     .from('exercises')
     .select('id, title, difficulty, subject_id, exam_id, theme')
     .eq('subject_id', subject.id)
+    .order('exam_id', { ascending: true, nullsFirst: false })
     .order('title');
 
   if (exercisesError) {
@@ -108,6 +109,15 @@ export default async function SubjectDetailPage({
     ...ex,
     examTitle: ex.exam_id ? (examTitleMap[ex.exam_id] || null) : null,
   }));
+
+  // Group exercises: first all standalone (no exam), then by exam
+  const standaloneExercises = exercises.filter(ex => !ex.exam_id);
+  const exercisesByExam: Record<string, typeof exercises> = {};
+  exercises.filter(ex => ex.exam_id).forEach(ex => {
+    const key = ex.exam_id;
+    if (!exercisesByExam[key]) exercisesByExam[key] = [];
+    exercisesByExam[key].push(ex);
+  });
 
   // Fetch real exams for this subject
   const { data: examsData } = await supabase
@@ -196,40 +206,89 @@ export default async function SubjectDetailPage({
             )}
           </TabsContent>
 
-          <TabsContent value="pratiquer" className="m-0 space-y-4">
-            <h2 className="text-xl font-semibold text-navy-900 mb-4">Exercices</h2>
+          <TabsContent value="pratiquer" className="m-0 space-y-8">
+            <h2 className="text-xl font-semibold text-navy-900">Exercices</h2>
             {exercises.length === 0 ? (
               <p className="text-gray-500 italic">Aucun exercice disponible pour le moment.</p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {exercises.map(exercise => (
-                  <Link key={exercise.id} href={`/matieres/${slug}/exercices/${exercise.id}`}>
-                    <Card className="hover:border-gold-300 transition-colors cursor-pointer group h-full">
-                      <CardContent className="p-6 flex items-center justify-between">
-                        <div>
-                          <Badge variant="outline" className="mb-2 bg-slate-50">
-                            {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
-                          </Badge>
-                          <h3 className="text-lg font-medium text-navy-900 group-hover:text-gold-600 transition-colors">
-                            {exercise.title}
-                          </h3>
-                          {exercise.examTitle && (
-                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              {exercise.examTitle}
-                            </p>
-                          )}
-                          {exercise.theme && (
-                            <p className="text-xs text-gold-600 mt-1">
-                              {exercise.theme}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gold-600 transition-colors" />
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+              <div className="space-y-8">
+
+                {/* Standalone exercises (not linked to an exam) */}
+                {standaloneExercises.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Exercices indépendants</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {standaloneExercises.map((exercise, idx) => (
+                        <Link key={exercise.id} href={`/matieres/${slug}/exercices/${exercise.id}`}>
+                          <Card className="hover:border-gold-300 transition-colors cursor-pointer group h-full">
+                            <CardContent className="p-5 flex items-center justify-between gap-3">
+                              <div className="flex items-start gap-3 min-w-0">
+                                <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
+                                  {idx + 1}
+                                </span>
+                                <div className="min-w-0">
+                                  <h4 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors line-clamp-2">
+                                    {exercise.title}
+                                  </h4>
+                                  {exercise.theme && (
+                                    <p className="text-xs text-gray-400 mt-0.5 truncate">{exercise.theme}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Badge variant="outline" className={`text-xs ${exercise.difficulty === 'easy' ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : exercise.difficulty === 'intermediate' ? 'border-amber-200 text-amber-700 bg-amber-50' : 'border-rose-200 text-rose-700 bg-rose-50'}`}>
+                                  {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
+                                </Badge>
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gold-500 transition-colors" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Exercises grouped by exam */}
+                {Object.entries(exercisesByExam).map(([examId, examExercises]) => {
+                  const examTitle = examExercises[0]?.examTitle || 'Examen';
+                  return (
+                    <div key={examId}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-navy-500 shrink-0" />
+                        <h3 className="text-sm font-semibold text-navy-700 uppercase tracking-wider">{examTitle}</h3>
+                        <span className="text-xs text-gray-400">— {examExercises.length} exercice{examExercises.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
+                        {examExercises.map((exercise, idx) => (
+                          <Link key={exercise.id} href={`/matieres/${slug}/exercices/${exercise.id}`}>
+                            <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white hover:bg-gold-50 transition-colors group cursor-pointer">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className="shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center group-hover:bg-gold-100 group-hover:text-gold-700 transition-colors">
+                                  {idx + 1}
+                                </span>
+                                <div className="min-w-0">
+                                  <h4 className="text-sm font-semibold text-navy-900 group-hover:text-gold-700 transition-colors truncate">
+                                    {exercise.title}
+                                  </h4>
+                                  {exercise.theme && (
+                                    <p className="text-xs text-gray-400 mt-0.5 truncate">{exercise.theme}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Badge variant="outline" className={`text-xs ${exercise.difficulty === 'easy' ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : exercise.difficulty === 'intermediate' ? 'border-amber-200 text-amber-700 bg-amber-50' : 'border-rose-200 text-rose-700 bg-rose-50'}`}>
+                                  {exercise.difficulty === 'easy' ? 'Facile' : exercise.difficulty === 'intermediate' ? 'Moyen' : 'Difficile'}
+                                </Badge>
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gold-500 transition-colors" />
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
