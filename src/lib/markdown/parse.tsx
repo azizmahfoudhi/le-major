@@ -37,6 +37,9 @@ export function preprocessMDX(source: string): string {
   
   // Replace {,} with , to prevent MDX from crashing (interpreting it as an invalid JS expression)
   processed = processed.replace(/\{,\}/g, ',');
+  // Escape % signs to prevent KaTeX from treating them as comments (which breaks \boxed etc.)
+  // We only escape if it's not already escaped
+  processed = processed.replace(/(?<!\\)%/g, '\\%');
   
   return processed;
 }
