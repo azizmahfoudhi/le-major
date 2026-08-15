@@ -7,16 +7,16 @@ import { Modal } from '@/components/ui/modal';
 import { Clock, AlertTriangle, Check, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { formatTimer } from '@/lib/utils/dates';
-import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { completeExamAttempt } from '../../../actions/exams';
+import React from 'react';
 
 interface Question {
   id: string;
   number: number;
   theme: string;
   points: number;
-  statement: string;
+  statement: React.ReactNode;
 }
 
 interface ExamProps {
@@ -26,31 +26,6 @@ interface ExamProps {
   questions: Question[];
   matiere?: string | null;
   filiere?: string | null;
-}
-
-function renderMath(text: string) {
-  let html = text;
-  
-  html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-    try {
-      return katex.renderToString(math, { displayMode: true, throwOnError: false });
-    } catch (e) {
-      return match;
-    }
-  });
-
-  html = html.replace(/\$([^\$]+)\$/g, (match, math) => {
-    try {
-      return katex.renderToString(math, { displayMode: false, throwOnError: false });
-    } catch (e) {
-      return match;
-    }
-  });
-
-  html = html.replace(/\n\n/g, '<br/><br/>');
-  html = html.replace(/\n/g, '<br/>');
-  
-  return html;
 }
 
 export default function ExamClient({ attemptId, title, durationMinutes, questions, matiere, filiere }: ExamProps) {
@@ -226,10 +201,9 @@ export default function ExamClient({ attemptId, title, durationMinutes, question
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{q.theme}</span>
                   )}
                 </div>
-                <div
-                  className="prose prose-sm max-w-none text-gray-800 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: renderMath(q.statement) }}
-                />
+                <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed">
+                  {q.statement}
+                </div>
               </div>
             ))}
 

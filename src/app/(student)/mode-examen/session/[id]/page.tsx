@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import ExamClient from './exam-client';
+import { renderMarkdownBody } from '@/lib/markdown/parse';
 
 export const metadata: Metadata = {
   title: 'Examen en cours | Le Major',
@@ -101,15 +102,15 @@ export default async function ExamSessionPage({ params }: { params: Promise<{ id
     finalExercises = directExercises || [];
   }
 
-  // 3. Format questions for the client
+  // 3. Format questions for the client with rich MDX rendering
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const questions = finalExercises.map((ex: any, index: number) => ({
+  const questions = await Promise.all(finalExercises.map(async (ex: any, index: number) => ({
     id: ex.id,
     number: index + 1,
     theme: ex.theme || ex.title || 'Exercice',
     points: ex.points || 5,
-    statement: ex.statement_body || ex.statement || ''
-  }));
+    statement: await renderMarkdownBody(ex.statement_body || ex.statement || '')
+  })));
 
 
   return (
