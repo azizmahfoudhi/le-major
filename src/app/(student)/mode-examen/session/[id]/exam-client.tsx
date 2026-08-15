@@ -145,8 +145,13 @@ export default function ExamClient({ attemptId, title, durationMinutes, question
                   </div>
                   <span className="font-bold text-white tracking-widest text-sm">LE MAJOR</span>
                 </div>
-                <div className="bg-gold-500 text-navy-900 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-widest self-start sm:self-auto">
-                  Sujet d'Examen Officiel
+                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto mt-2 sm:mt-0">
+                  <span className="bg-white/10 text-white border border-white/20 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    IHEC Carthage
+                  </span>
+                  <span className="bg-gold-500 text-navy-900 text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    Sujet d'Examen Officiel
+                  </span>
                 </div>
               </div>
               
