@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui';
-import { ImageIcon, Upload, Loader2, X, Image as ImageIconLucide } from 'lucide-react';
+import { ImageIcon, Upload, Loader2, X, Image as ImageIconLucide, Trash2 } from 'lucide-react';
 
 interface MediaPickerProps {
   onSelect: (markdownLink: string) => void;
@@ -20,6 +20,7 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const loadFiles = React.useCallback(async () => {
     setIsLoading(true);
@@ -72,6 +73,24 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
 
     await loadFiles();
     setIsUploading(false);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, fileName: string) => {
+    e.stopPropagation();
+    if (!window.confirm("Voulez-vous vraiment supprimer ce fichier ?")) return;
+
+    setIsDeleting(fileName);
+    const supabase = createClient();
+    const { error } = await supabase.storage.from('medias').remove([fileName]);
+    
+    if (error) {
+      alert('Erreur lors de la suppression: ' + error.message);
+      setIsDeleting(null);
+      return;
+    }
+
+    await loadFiles();
+    setIsDeleting(null);
   };
 
   const handleSelect = (file: MediaFile) => {
@@ -145,7 +164,22 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
                           {file.name}
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-navy-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={(e) => handleDelete(e, file.name)}
+                        disabled={isDeleting === file.name}
+                        className="absolute top-2 right-2 p-1.5 bg-white/90 text-gray-500 hover:text-rose-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 z-10 shadow-sm"
+                        title="Supprimer ce fichier"
+                      >
+                        {isDeleting === file.name ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+
+                      <div className="absolute inset-0 bg-navy-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                         <span className="text-white text-sm font-medium">Insérer</span>
                       </div>
                     </div>
