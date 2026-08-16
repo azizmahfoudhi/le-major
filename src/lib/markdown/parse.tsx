@@ -99,7 +99,11 @@ export function preprocessMDX(source: string): string {
       !line.trim().startsWith('\\[') &&
       !line.trim().startsWith('\\]')
     ) {
-      fixed.push('$' + line.trim() + '$');
+      // Strip any stray $ signs from the line, which would break the math block
+      const cleanLine = line.trim().replace(/\$/g, '  ');
+      fixed.push('$$');
+      fixed.push(cleanLine);
+      fixed.push('$$');
     } else {
       fixed.push(line);
     }
