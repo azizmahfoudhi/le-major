@@ -69,8 +69,6 @@ export function preprocessMDX(source: string): string {
       );
     });
     processed = wrapped.join('$$');
-    // Clean up any accidental $$$$ sequences from adjacent wrapped blocks
-    processed = processed.replace(/\$\$\s*\$\$/g, '$$');
   }
 
   // Convert lines of 2+ "=" signs to a single "=" (accounting formula separator).
