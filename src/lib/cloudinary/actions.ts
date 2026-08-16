@@ -64,12 +64,19 @@ export async function listMedia(): Promise<CloudinaryMedia[]> {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (result.resources || []).map((r: any) => ({
+    const items = (result.resources || []).map((r: any) => ({
       publicId: r.public_id,
       name: r.public_id.split('/').pop() || r.public_id,
       url: r.secure_url,
       createdAt: r.created_at,
     }));
+
+    // Sort newest first
+    return items.sort((a: CloudinaryMedia, b: CloudinaryMedia) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
   } catch (err) {
     console.error('[Cloudinary List Error]', err);
     return [];

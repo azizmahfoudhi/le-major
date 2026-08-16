@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui';
-import { ImageIcon, Upload, Loader2, X, Image as ImageIconLucide, Trash2 } from 'lucide-react';
+import { ImageIcon, Upload, Loader2, X, Image as ImageIconLucide, Trash2, Search } from 'lucide-react';
 import { uploadMedia, listMedia, deleteMedia, type CloudinaryMedia } from '@/lib/cloudinary/actions';
 
 interface MediaPickerProps {
@@ -12,6 +12,7 @@ interface MediaPickerProps {
 export default function MediaPicker({ onSelect }: MediaPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [files, setFiles] = useState<CloudinaryMedia[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -104,9 +105,18 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
               </button>
             </div>
 
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <p className="text-sm text-gray-500">Selectionnez une image ou importez-en une nouvelle.</p>
-              <div className="relative">
+            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-50/50">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-navy-500"
+                />
+              </div>
+              <div className="relative w-full sm:w-auto">
                 <input
                   type="file"
                   accept="image/*,.pdf,.doc,.docx"
@@ -114,7 +124,7 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
                   disabled={isUploading}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <Button type="button" disabled={isUploading}>
+                <Button type="button" disabled={isUploading} className="w-full sm:w-auto">
                   {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                   {isUploading ? 'Importation...' : 'Importer un fichier'}
                 </Button>
@@ -126,9 +136,11 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
                 <div className="flex justify-center items-center py-12">
                   <Loader2 className="w-8 h-8 text-navy-900 animate-spin" />
                 </div>
-              ) : files.length > 0 ? (
+              ) : files.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {files.map(file => (
+                  {files
+                    .filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map(file => (
                     <div
                       key={file.publicId}
                       onClick={() => handleSelect(file)}
@@ -161,7 +173,7 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p>Aucun media dans la bibliotheque.</p>
+                  <p>{searchQuery ? 'Aucun résultat pour cette recherche.' : 'Aucun media dans la bibliotheque.'}</p>
                 </div>
               )}
             </div>
