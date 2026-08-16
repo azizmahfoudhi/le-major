@@ -3,6 +3,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import remarkDirective from 'remark-directive';
 import rehypeKatex from 'rehype-katex';
+import rehypeSlug from 'rehype-slug';
 import { remarkAcademicCallouts } from './plugins/remark-academic-callouts';
 import { mdxComponents } from './components';
 
@@ -139,6 +140,7 @@ export async function renderMarkdown<T = ContentFrontmatter>(source: string) {
             remarkAcademicCallouts,
           ],
           rehypePlugins: [
+            rehypeSlug,
             [rehypeKatex, { strict: false, throwOnError: false }],
           ],
         },

@@ -109,6 +109,17 @@ export const mdxComponents: MDXComponents = {
         </Link>
       );
     }
+    if (href?.startsWith('#')) {
+      return (
+        <a
+          href={href}
+          className="text-navy-600 underline underline-offset-2 hover:text-navy-800 transition-colors"
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    }
     return (
       <a
         href={href}
