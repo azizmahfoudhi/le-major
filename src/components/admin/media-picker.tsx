@@ -30,10 +30,7 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
     }
   }, [isOpen, loadFiles]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadFile = React.useCallback(async (file: File) => {
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -47,6 +44,41 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
 
     await loadFiles();
     setIsUploading(false);
+  }, [loadFiles]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      // Don't intercept paste if typing in the search box
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') === 0) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            uploadFile(file);
+            break; // only upload first pasted image
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen, uploadFile]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
     e.target.value = '';
   };
 
