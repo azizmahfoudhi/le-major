@@ -41,9 +41,10 @@ export function preprocessMDX(source: string): string {
   processed = processed.replace(/^\[\s*$/gm, '$$$$');
   processed = processed.replace(/^\]\s*$/gm, '$$$$');
   
-  // Replace \[ and \] with $$
-  processed = processed.replace(/\\\[/g, '$$$$');
-  processed = processed.replace(/\\\]/g, '$$$$');
+  // Replace \[ and \] with $$ — but only when NOT preceded by another \
+  // (\\[ is a LaTeX line-break with spacing like \\[-2pt], not a math delimiter)
+  processed = processed.replace(/(?<!\\)\\\[/g, '$$$$');
+  processed = processed.replace(/(?<!\\)\\\]/g, '$$$$');
   
   // Replace {,} with , to prevent MDX from crashing (interpreting it as an invalid JS expression)
   processed = processed.replace(/\{,\}/g, ',');
@@ -51,6 +52,23 @@ export function preprocessMDX(source: string): string {
   // Escape % signs to prevent KaTeX from treating them as comments (which breaks \boxed etc.)
   // Only escape if not already escaped
   processed = processed.replace(/(?<!\\)%/g, '\\%');
+
+  // Wrap \begin{...}...\end{...} environments that are outside $$ in display math.
+  // Split on existing $$ delimiters, process only non-math segments.
+  {
+    const parts = processed.split('$$');
+    const wrapped = parts.map((part, idx) => {
+      if (idx % 2 === 1) return part; // inside existing $$ block, leave untouched
+      // Wrap any LaTeX environments in this non-math segment
+      return part.replace(
+        /(\\begin\{[a-zA-Z*]+\}[\s\S]*?\\end\{[a-zA-Z*]+\})/g,
+        '\n$$\n$1\n$$\n'
+      );
+    });
+    processed = wrapped.join('$$');
+    // Clean up any accidental $$$$ sequences from adjacent wrapped blocks
+    processed = processed.replace(/\$\$\s*\$\$/g, '$$');
+  }
 
   // Convert lines of 2+ "=" signs to a single "=" (accounting formula separator).
   // Setext headings (===) or visual separators are not valid LaTeX and should just be "=".
