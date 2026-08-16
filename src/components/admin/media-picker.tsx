@@ -1,51 +1,25 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui';
 import { ImageIcon, Upload, Loader2, X, Image as ImageIconLucide, Trash2 } from 'lucide-react';
+import { uploadMedia, listMedia, deleteMedia, type CloudinaryMedia } from '@/lib/cloudinary/actions';
 
 interface MediaPickerProps {
   onSelect: (markdownLink: string) => void;
 }
 
-interface MediaFile {
-  name: string;
-  url: string;
-  created_at: string | null;
-}
-
 export default function MediaPicker({ onSelect }: MediaPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [files, setFiles] = useState<MediaFile[]>([]);
+  const [files, setFiles] = useState<CloudinaryMedia[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const loadFiles = React.useCallback(async () => {
     setIsLoading(true);
-    const supabase = createClient();
-    const { data, error } = await supabase.storage.from('medias').list('', {
-      limit: 100,
-      sortBy: { column: 'created_at', order: 'desc' }
-    });
-
-    if (error) {
-      console.error('Error loading media:', error);
-      setIsLoading(false);
-      return;
-    }
-
-    const fileList = (data || []).filter(f => f.name !== '.emptyFolderPlaceholder').map(f => {
-      const { data: { publicUrl } } = supabase.storage.from('medias').getPublicUrl(f.name);
-      return {
-        name: f.name,
-        url: publicUrl,
-        created_at: f.created_at
-      };
-    });
-
-    setFiles(fileList);
+    const media = await listMedia();
+    setFiles(media);
     setIsLoading(false);
   }, []);
 
@@ -60,31 +34,30 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
     if (!file) return;
 
     setIsUploading(true);
-    const supabase = createClient();
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const formData = new FormData();
+    formData.append('file', file);
 
-    const { error } = await supabase.storage.from('medias').upload(fileName, file);
-    if (error) {
-      alert('Erreur lors de l\'upload: ' + error.message);
+    const result = await uploadMedia(formData);
+    if (!result.success) {
+      alert("Erreur lors de l'upload: " + result.error);
       setIsUploading(false);
       return;
     }
 
     await loadFiles();
     setIsUploading(false);
+    e.target.value = '';
   };
 
-  const handleDelete = async (e: React.MouseEvent, fileName: string) => {
+  const handleDelete = async (e: React.MouseEvent, publicId: string) => {
     e.stopPropagation();
-    if (!window.confirm("Voulez-vous vraiment supprimer ce fichier ?")) return;
+    if (!window.confirm('Voulez-vous vraiment supprimer ce fichier ?')) return;
 
-    setIsDeleting(fileName);
-    const supabase = createClient();
-    const { error } = await supabase.storage.from('medias').remove([fileName]);
-    
-    if (error) {
-      alert('Erreur lors de la suppression: ' + error.message);
+    setIsDeleting(publicId);
+    const result = await deleteMedia(publicId);
+
+    if (!result.success) {
+      alert('Erreur lors de la suppression: ' + result.error);
       setIsDeleting(null);
       return;
     }
@@ -93,24 +66,26 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
     setIsDeleting(null);
   };
 
-  const handleSelect = (file: MediaFile) => {
-    const isImage = file.name.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i);
-    const markdown = isImage ? `![${file.name}](${file.url})` : `[Télécharger ${file.name}](${file.url})`;
+  const handleSelect = (file: CloudinaryMedia) => {
+    const isImage = file.url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) || file.url.includes('image');
+    const markdown = isImage
+      ? `![${file.name}](${file.url})`
+      : `[Telecharger ${file.name}](${file.url})`;
     onSelect(markdown);
     setIsOpen(false);
   };
 
   return (
     <>
-      <Button 
-        type="button" 
-        variant="outline" 
-        size="sm" 
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setIsOpen(true)}
         className="text-gray-600 bg-gray-50 hover:bg-gray-100"
       >
         <ImageIconLucide className="w-4 h-4 mr-2" />
-        Ajouter un média
+        Ajouter un media
       </Button>
 
       {isOpen && (
@@ -119,18 +94,21 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-navy-900 font-playfair flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-gray-400" />
-                Bibliothèque de Médias
+                Bibliotheque de Medias
               </h2>
-              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <p className="text-sm text-gray-500">Sélectionnez une image ou importez-en une nouvelle.</p>
+              <p className="text-sm text-gray-500">Selectionnez une image ou importez-en une nouvelle.</p>
               <div className="relative">
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept="image/*,.pdf,.doc,.docx"
                   onChange={handleUpload}
                   disabled={isUploading}
@@ -151,36 +129,31 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
               ) : files.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {files.map(file => (
-                    <div 
-                      key={file.name} 
+                    <div
+                      key={file.publicId}
                       onClick={() => handleSelect(file)}
                       className="group cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:border-navy-900 hover:shadow-md transition-all relative aspect-square bg-gray-50 flex items-center justify-center"
                     >
-                      {file.name.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="text-xs text-gray-500 font-medium text-center p-2 truncate w-full">
-                          {file.name}
-                        </div>
-                      )}
-                      
-                      {/* Delete Button */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={file.url}
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                      />
                       <button
-                        onClick={(e) => handleDelete(e, file.name)}
-                        disabled={isDeleting === file.name}
+                        onClick={(e) => handleDelete(e, file.publicId)}
+                        disabled={isDeleting === file.publicId}
                         className="absolute top-2 right-2 p-1.5 bg-white/90 text-gray-500 hover:text-rose-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 z-10 shadow-sm"
                         title="Supprimer ce fichier"
                       >
-                        {isDeleting === file.name ? (
+                        {isDeleting === file.publicId ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Trash2 className="w-4 h-4" />
                         )}
                       </button>
-
                       <div className="absolute inset-0 bg-navy-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                        <span className="text-white text-sm font-medium">Insérer</span>
+                        <span className="text-white text-sm font-medium">Inserer</span>
                       </div>
                     </div>
                   ))}
@@ -188,7 +161,7 @@ export default function MediaPicker({ onSelect }: MediaPickerProps) {
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <ImageIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p>Aucun média dans la bibliothèque.</p>
+                  <p>Aucun media dans la bibliotheque.</p>
                 </div>
               )}
             </div>

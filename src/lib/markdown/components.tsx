@@ -126,8 +126,8 @@ export const mdxComponents: MDXComponents = {
     
     const imgClasses = "rounded-lg my-6 mx-auto max-w-[90%] md:max-w-xl lg:max-w-2xl h-auto shadow-sm border border-gray-100/50 bg-white";
     
-    // For Supabase storage images, use next/image
-    if (typeof src === 'string' && src.includes('supabase')) {
+    // Use next/image for Supabase or Cloudinary hosted images (both are optimizable)
+    if (typeof src === 'string' && (src.includes('supabase') || src.includes('cloudinary'))) {
       return (
         <Image
           src={src}
