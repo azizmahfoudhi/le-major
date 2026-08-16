@@ -29,13 +29,16 @@ export interface ContentFrontmatter {
 export function preprocessMDX(source: string): string {
   if (!source) return '';
   let processed = source;
+
+  // Normalize line endings
+  processed = processed.replace(/\r\n/g, '\n');
+
+  // Strip non-breaking spaces which crash KaTeX when copy-pasted from Word/PDF
+  processed = processed.replace(/\u00A0/g, ' ');
   
   // Strip auto-generated HTML anchor tags (e.g. <a id="..."></a>) that crash the MDX
   // JSX parser due to special characters like \text in the id attribute value.
   processed = processed.replace(/<a\s+id="[^"]*"><\/a>/g, '');
-
-  // Also normalize \r\n to \n to ensure consistent line processing on all platforms
-  processed = processed.replace(/\r\n/g, '\n');
 
   // Replace standalone [ and ] on their own lines with $$
   processed = processed.replace(/^\[\s*$/gm, '$$$$');
