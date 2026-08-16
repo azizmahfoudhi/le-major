@@ -61,14 +61,41 @@ export function preprocessMDX(source: string): string {
       continue;
     }
     // Detect setext heading underlines (lines of only = or only -)
+    // These are NOT markdown headings here — they represent "=" in accounting formulas.
+    // Replace them with a single "=" on its own line so they render correctly.
     if (!inMathBlock && /^={2,}\s*$/.test(line)) {
-      // Prepend a backslash to escape setext interpretation
-      fixed.push('\\' + line);
+      fixed.push('=');
+    } else if (!inMathBlock && /^-{2,}\s*$/.test(line) && i > 0 && fixed[fixed.length - 1].trim() !== '') {
+      // Only convert --- that would form a setext heading (non-empty line above)
+      // Keep it as a plain "—" dash separator
+      fixed.push('—');
     } else {
       fixed.push(line);
     }
   }
   processed = fixed.join('\n');
+
+  // Wrap lines that look like bare LaTeX commands (e.g. \text{...}) outside math blocks
+  // so they get rendered by KaTeX instead of treated as plain text.
+  const lines2 = processed.split('\n');
+  let inMath2 = false;
+  const fixed2: string[] = [];
+  for (const line of lines2) {
+    if (line.trim() === '$$') { inMath2 = !inMath2; fixed2.push(line); continue; }
+    // If line starts with a LaTeX command and is not already wrapped in $ or $$
+    if (
+      !inMath2 &&
+      /^\\[a-zA-Z]/.test(line.trim()) &&
+      !line.trim().startsWith('\\\\') &&
+      !line.trim().startsWith('\\[') &&
+      !line.trim().startsWith('\\]')
+    ) {
+      fixed2.push('$' + line.trim() + '$');
+    } else {
+      fixed2.push(line);
+    }
+  }
+  processed = fixed2.join('\n');
   
   return processed;
 }
