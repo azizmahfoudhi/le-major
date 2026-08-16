@@ -52,57 +52,41 @@ export function preprocessMDX(source: string): string {
   // Only escape if not already escaped
   processed = processed.replace(/(?<!\\)%/g, '\\%');
 
-  // Fix setext heading issue: a line consisting only of '=' or '-' right after a text line
-  // is interpreted by remark-gfm as an H1/H2 heading underline.
-  // This causes the '===' line to disappear (the text above becomes a heading).
-  // We break this by prefixing such lines with a backslash so they render literally.
-  // We skip lines that are already inside $$ math blocks.
-  const lines = processed.split('\n');
-  let inMathBlock = false;
-  const fixed: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.trim() === '$$') {
-      inMathBlock = !inMathBlock;
-      fixed.push(line);
-      continue;
-    }
-    // Detect setext heading underlines (lines of only = or only -)
-    // These are NOT markdown headings here — they represent "=" in accounting formulas.
-    // Replace them with a single "=" on its own line so they render correctly.
-    if (!inMathBlock && /^={2,}\s*$/.test(line)) {
-      fixed.push('=');
-    } else if (!inMathBlock && /^-{2,}\s*$/.test(line) && i > 0 && fixed[fixed.length - 1].trim() !== '') {
-      // Only convert --- that would form a setext heading (non-empty line above)
-      // Keep it as a plain "—" dash separator
-      fixed.push('—');
-    } else {
-      fixed.push(line);
-    }
-  }
-  processed = fixed.join('\n');
+  // Convert lines of 2+ "=" signs to a single "=" (accounting formula separator).
+  // Setext headings (===) or visual separators are not valid LaTeX and should just be "=".
+  // Use global multiline regex — handles both inside and outside math blocks.
+  processed = processed.replace(/^={2,}\s*$/gm, '=');
+
+  // Similarly, convert lines of 2+ "-" signs that act as setext h2 underlines into "—"
+  // but only if they're not already an HR (3+ dashes with nothing else).
+  processed = processed.replace(/^-{2,}\s*$/gm, (match) => {
+    return match.trim().length >= 3 ? '—' : match;
+  });
+
+  // Strip "## " prefix from lines that are actually LaTeX (contain \text, \frac, etc.)
+  // These come from markdown generators that add headings around formulas.
+  processed = processed.replace(/^#{1,3}\s+([\(\\\$])/gm, '$1');
 
   // Wrap lines that look like bare LaTeX commands (e.g. \text{...}) outside math blocks
   // so they get rendered by KaTeX instead of treated as plain text.
-  const lines2 = processed.split('\n');
-  let inMath2 = false;
-  const fixed2: string[] = [];
-  for (const line of lines2) {
-    if (line.trim() === '$$') { inMath2 = !inMath2; fixed2.push(line); continue; }
-    // If line starts with a LaTeX command and is not already wrapped in $ or $$
+  const lines = processed.split('\n');
+  let inMathBlock = false;
+  const fixed: string[] = [];
+  for (const line of lines) {
+    if (line.trim() === '$$') { inMathBlock = !inMathBlock; fixed.push(line); continue; }
     if (
-      !inMath2 &&
+      !inMathBlock &&
       /^\\[a-zA-Z]/.test(line.trim()) &&
       !line.trim().startsWith('\\\\') &&
       !line.trim().startsWith('\\[') &&
       !line.trim().startsWith('\\]')
     ) {
-      fixed2.push('$' + line.trim() + '$');
+      fixed.push('$' + line.trim() + '$');
     } else {
-      fixed2.push(line);
+      fixed.push(line);
     }
   }
-  processed = fixed2.join('\n');
+  processed = fixed.join('\n');
   
   return processed;
 }
