@@ -123,6 +123,9 @@ export const mdxComponents: MDXComponents = {
   },
   img: ({ src, alt, width: _width, height: _height, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
     if (!src) return null;
+    
+    const imgClasses = "rounded-lg my-6 mx-auto max-w-[90%] md:max-w-xl lg:max-w-2xl h-auto shadow-sm border border-gray-100/50 bg-white";
+    
     // For Supabase storage images, use next/image
     if (typeof src === 'string' && src.includes('supabase')) {
       return (
@@ -131,7 +134,7 @@ export const mdxComponents: MDXComponents = {
           alt={alt || ''}
           width={800}
           height={400}
-          className="rounded-lg my-6 mx-auto max-w-full h-auto"
+          className={imgClasses}
           {...props}
         />
       );
@@ -142,7 +145,7 @@ export const mdxComponents: MDXComponents = {
       <img
         src={src}
         alt={alt || ''}
-        className="rounded-lg my-6 mx-auto max-w-full h-auto"
+        className={imgClasses}
         {...props}
       />
     );
