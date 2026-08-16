@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { renderMarkdownBody } from '@/lib/markdown/parse';
-import { extractTableOfContents, injectHeadingIds } from '@/lib/utils/markdown';
+import { extractTableOfContents } from '@/lib/utils/markdown';
+import { TocLink } from './toc-link';
 import { CompleteButton } from '../../../../../components/complete-button';
 
 export const metadata: Metadata = {
@@ -64,8 +65,7 @@ export default async function LessonReaderPage({
   }
 
   const rawBody = content.body || '';
-  const bodyWithIds = injectHeadingIds(rawBody);
-  const renderedContent = await renderMarkdownBody(bodyWithIds);
+  const renderedContent = await renderMarkdownBody(rawBody);
   const toc = extractTableOfContents(rawBody);
 
   // Fetch sibling contents for next/prev navigation
@@ -158,14 +158,12 @@ export default async function LessonReaderPage({
                 <ul className="space-y-3">
                   {toc.map((item, index) => (
                     <li key={item.id} style={{ marginLeft: item.level === 3 ? '1rem' : '0' }}>
-                      <a 
-                        href={`#${item.id}`} 
-                        className={`text-sm hover:text-gold-600 transition-colors ${
-                          index === 0 && item.level === 2 ? 'text-gold-600 font-medium' : 'text-gray-600'
-                        }`}
-                      >
-                        {item.title}
-                      </a>
+                      <TocLink 
+                        id={item.id} 
+                        title={item.title} 
+                        level={item.level} 
+                        isFirstH2={index === 0 && item.level === 2} 
+                      />
                     </li>
                   ))}
                 </ul>
