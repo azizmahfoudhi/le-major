@@ -85,25 +85,30 @@ export function preprocessMDX(source: string): string {
   // These come from markdown generators that add headings around formulas.
   processed = processed.replace(/^#{1,3}\s+([\(\\\$])/gm, '$1');
 
-  // Wrap lines that look like bare LaTeX commands (e.g. \text{...}) outside math blocks
-  // so they get rendered by KaTeX instead of treated as plain text.
+  // Wrap lines containing LaTeX commands outside math blocks in $$ display math.
+  // Detects both lines STARTING with \ and lines CONTAINING \text{, \frac{, \boxed{, etc.
+  const LATEX_INLINE_PATTERN = /\\(?:text|frac|dfrac|boxed|sqrt|sum|int|prod|left|right|begin|end|mathbf|mathrm|overline|underline|hat|bar|vec|cdot|times|div|pm|leq|geq|neq|approx|equiv|rightarrow|leftarrow|Rightarrow|Leftarrow|infty|partial|Delta|Sigma|Pi|alpha|beta|gamma|lambda|mu|sigma|theta|omega)\s*[\{\(]/;
+
   const lines = processed.split('\n');
   let inMathBlock = false;
   const fixed: string[] = [];
   for (const line of lines) {
     if (line.trim() === '$$') { inMathBlock = !inMathBlock; fixed.push(line); continue; }
-    if (
-      !inMathBlock &&
-      /^\\[a-zA-Z]/.test(line.trim()) &&
-      !line.trim().startsWith('\\\\') &&
-      !line.trim().startsWith('\\[') &&
-      !line.trim().startsWith('\\]')
-    ) {
-      // Strip any stray $ signs from the line, which would break the math block
-      const cleanLine = line.trim().replace(/\$/g, '  ');
-      fixed.push('$$');
-      fixed.push(cleanLine);
-      fixed.push('$$');
+
+    const trimmed = line.trim();
+    const startsWithLatex = /^\\[a-zA-Z]/.test(trimmed) && !trimmed.startsWith('\\\\') && !trimmed.startsWith('\\[') && !trimmed.startsWith('\\]');
+    const containsLatex = LATEX_INLINE_PATTERN.test(trimmed);
+
+    if (!inMathBlock && (startsWithLatex || containsLatex)) {
+      // Split on stray $ separators — each segment becomes its own $$ block
+      const segments = trimmed.split(/\s*\$\s*/);
+      for (const seg of segments) {
+        const s = seg.trim();
+        if (!s) continue;
+        fixed.push('$$');
+        fixed.push(s);
+        fixed.push('$$');
+      }
     } else {
       fixed.push(line);
     }
