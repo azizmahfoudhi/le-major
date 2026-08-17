@@ -129,6 +129,14 @@
     font-size: 1.05em;
   }
 
+  /* Fix Tailwind resetting KaTeX borders (for \boxed, etc.) */
+  .prose-reader .katex * {
+    border-color: currentColor;
+  }
+  .prose-reader .katex .fbox {
+    border-width: 1px;
+  }
+
   /* Academic callout base */
   .academic-callout {
     @apply my-6 rounded-r-lg border-l-4 p-4 shadow-sm;
