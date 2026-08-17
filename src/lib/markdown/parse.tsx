@@ -187,6 +187,7 @@ export async function renderMarkdownBody(source: string) {
             remarkAcademicCallouts,
           ],
           rehypePlugins: [
+            rehypeSlug,
             [rehypeKatex, { strict: false, throwOnError: false }],
           ],
         },
