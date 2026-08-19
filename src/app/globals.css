@@ -133,6 +133,9 @@
   .katex * {
     border-color: currentColor;
   }
+  .katex .vlist > span {
+    width: 100%;
+  }
   .katex .fbox, .katex .fcolorbox {
     border-width: 1px !important;
     width: 100% !important;
