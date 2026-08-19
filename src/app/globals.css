@@ -134,7 +134,10 @@
     border-color: currentColor;
   }
   .katex .fbox, .katex .fcolorbox {
-    border-width: 1px;
+    border-width: 1px !important;
+    width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
   }
 
   /* Academic callout base */
