@@ -129,11 +129,11 @@
     font-size: 1.05em;
   }
 
-  /* Fix Tailwind resetting KaTeX borders (for \boxed, etc.) */
-  .prose-reader .katex * {
+  /* Fix Tailwind resetting KaTeX borders (for \boxed, etc.) globally */
+  .katex * {
     border-color: currentColor;
   }
-  .prose-reader .katex .fbox {
+  .katex .fbox, .katex .fcolorbox {
     border-width: 1px;
   }
 
