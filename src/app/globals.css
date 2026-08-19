@@ -129,19 +129,8 @@
     font-size: 1.05em;
   }
 
-  /* Fix Tailwind resetting KaTeX borders (for \boxed, etc.) globally */
-  .katex * {
-    border-color: currentColor;
-  }
-  .katex .vlist > span {
-    width: 100%;
-  }
-  .katex .fbox, .katex .fcolorbox {
-    border-width: 1px !important;
-    width: 100% !important;
-    display: block !important;
-    box-sizing: border-box !important;
-  }
+
+
 
   /* Academic callout base */
   .academic-callout {
@@ -152,6 +141,32 @@
   .skeleton {
     @apply animate-pulse bg-gray-200 rounded;
   }
+}
+
+/* ===== KaTeX border/box fixes =====
+   These rules MUST be outside @layer base.
+   @layer base has lower cascade priority than non-layered CSS (like katex.min.css),
+   so overrides there are silently ignored by the browser.
+   Placing them here gives them proper unlayered priority to win the cascade. */
+
+/* Restore border color which Tailwind preflight resets to theme color */
+.katex * {
+  border-color: currentColor;
+}
+
+/* Fix for \boxed{} command:
+   The .fbox element gets 'border-width: 0' from Tailwind's preflight global reset,
+   overriding the 0.04em inline style KaTeX sets.
+   We restore it here. Also force display:block + width:100% to prevent
+   the box from collapsing to a hairline when its parent is a flex/inline-block context. */
+.katex .katex-stretchy.fbox,
+.katex .katex-stretchy.fcolorbox,
+.katex .fbox,
+.katex .fcolorbox {
+  border-width: 0.04em;
+  min-width: 100%;
+  display: block;
+  box-sizing: border-box;
 }
 
 @layer utilities {
