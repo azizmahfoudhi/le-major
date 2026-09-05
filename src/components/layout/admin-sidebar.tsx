@@ -18,7 +18,8 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
-  LogOut
+  LogOut,
+  Images,
 } from 'lucide-react';
 import { useState } from 'react';
 import Logo from '@/components/ui/logo';
@@ -37,6 +38,7 @@ const iconMap: Record<string, React.ElementType> = {
   Users,
   BarChart3,
   Settings,
+  Images,
 };
 
 export default function AdminSidebar() {

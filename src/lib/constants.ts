@@ -39,6 +39,7 @@ export const ROUTES = {
   adminPacks: '/admin/packs',
   adminCodes: '/admin/codes',
   adminEtudiants: '/admin/etudiants',
+  adminMedias: '/admin/medias',
   adminStatistiques: '/admin/statistiques',
   adminParametres: '/admin/parametres',
 } as const;
@@ -57,6 +58,7 @@ export const ADMIN_NAV = [
     { label: 'Contenus', href: ROUTES.adminContenus, icon: 'FileText' },
     { label: 'Exercices', href: ROUTES.adminExercices, icon: 'PenTool' },
     { label: 'Examens', href: ROUTES.adminExamens, icon: 'ClipboardList' },
+    { label: 'Médias', href: ROUTES.adminMedias, icon: 'Images' },
   ]},
   { section: 'Accès', items: [
     { label: 'Packs', href: ROUTES.adminPacks, icon: 'Package' },
