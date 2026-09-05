@@ -83,11 +83,14 @@ function TreeItem({
 
       {isOpen && hasChildren && (
         <div className="mt-1">
-          {node.children!.map((child) => (
-            <TreeItem key={child.id} node={child} level={level + 1} onAdd={onAdd} onEdit={onEdit} onDelete={onDelete} />
-          ))}
+          {[...node.children!]
+            .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+            .map((child) => (
+              <TreeItem key={child.id} node={child} level={level + 1} onAdd={onAdd} onEdit={onEdit} onDelete={onDelete} />
+            ))}
         </div>
       )}
+
     </div>
   );
 }
@@ -235,16 +238,19 @@ export default function StructureManager() {
           </div>
         ) : (
           <div className="space-y-1">
-            {tree.map((node) => (
-              <TreeItem 
-                key={node.id} 
-                node={node} 
-                onAdd={(parentId, type) => { setAddModal({ open: true, parentId, type }); setNameInput(''); }}
-                onEdit={(n) => { setEditModal({ open: true, node: n }); setNameInput(n.name); }}
-                onDelete={handleDelete}
-              />
-            ))}
+            {[...tree]
+              .sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+              .map((node) => (
+                <TreeItem 
+                  key={node.id} 
+                  node={node} 
+                  onAdd={(parentId, type) => { setAddModal({ open: true, parentId, type }); setNameInput(''); }}
+                  onEdit={(n) => { setEditModal({ open: true, node: n }); setNameInput(n.name); }}
+                  onDelete={handleDelete}
+                />
+              ))}
           </div>
+
         )}
       </Card>
 
