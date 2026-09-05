@@ -49,7 +49,7 @@ export default async function SubjectDetailPage({
       contents (id)
     `)
     .eq('subject_id', subject.id)
-    .order('order_index', { ascending: true });
+    .order('title', { ascending: true });
 
   // Fetch student progress for these chapters
   const { data: progressData } = await supabase
